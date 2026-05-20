@@ -407,7 +407,7 @@ function App() {
             <Policy label="Allowed categories" value="KYB, freight, settlement routing" />
             <Policy label="Human approval" value={`Required above ${maxAutonomousSpend || "0"} USDC`} />
             <Policy label="Settlement rail" value="Gateway nanopayments first, Arc escrow for jobs" />
-            <Policy label="Current mode" value={readiness?.testnetReady ? "Circle/Arc testnet ready" : "Live app, pending Circle wallet IDs"} />
+            <Policy label="Current mode" value={readiness?.testnetReady ? "Circle/Arc testnet ready" : "Live app, pending required rails"} />
           </div>
         </section>
 
@@ -427,6 +427,11 @@ function App() {
                 label="Circle Wallets"
                 value={readiness.circle.agentWalletConfigured ? "configured" : "missing wallet IDs"}
                 status={readiness.circle.agentWalletConfigured ? "online" : "needed"}
+              />
+              <ReadinessCard
+                label="Agent wallet"
+                value={readiness.circle.agentWalletAddress}
+                status={readiness.circle.agentWalletAddress === "not-configured" ? "needed" : "online"}
               />
               <ReadinessCard
                 label="Escrow contract"

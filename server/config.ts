@@ -54,8 +54,11 @@ export function getReadiness() {
     ["CIRCLE_WALLET_SET_ID", config.circleWalletSetId],
     ["CIRCLE_OWNER_WALLET_ID", config.circleOwnerWalletId],
     ["CIRCLE_AGENT_WALLET_ID", config.circleAgentWalletId],
+    ["CIRCLE_OWNER_WALLET_ADDRESS", config.circleOwnerWalletAddress],
+    ["CIRCLE_AGENT_WALLET_ADDRESS", config.circleAgentWalletAddress],
     ["ARC_USDC_ADDRESS", config.arcUsdcAddress],
     ["ARC_JOB_ESCROW_ADDRESS", config.arcJobEscrowAddress],
+    ["ARC_DEPLOYER_PRIVATE_KEY", config.arcDeployerPrivateKey],
   ] as const;
 
   const missing = requiredForTestnet

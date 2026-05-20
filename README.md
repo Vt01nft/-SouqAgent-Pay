@@ -47,6 +47,9 @@ API endpoints:
 - `GET /api/demo/state`
 - `POST /api/agent/run`
 - `GET /api/seller/supplier-risk`
+- `GET /api/escrow/jobs`
+- `POST /api/escrow/jobs/:jobId/release`
+- `POST /api/escrow/jobs/:jobId/refund`
 
 The seller endpoint intentionally returns `402 Payment Required` until a `payment-signature` header is supplied. This models the x402 paid-resource loop used by Circle Gateway Nanopayments.
 
@@ -68,13 +71,16 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 
 ## Demo Mode vs Testnet Mode
 
-The project currently runs in `INTEGRATION_MODE=demo`. Demo mode is deliberate: it lets judges inspect the full user flow even if gated Circle products or testnet funds are not available yet.
+The project runs in `INTEGRATION_MODE=testnet` for the deployed product. Demo mode remains available as a local fallback so judges can inspect the user flow even if gated Circle products or testnet funds are temporarily unavailable.
 
-When credentials are available, the adapter boundary is ready for:
+Configured testnet rails include:
 
-- Circle Wallet IDs and API key;
-- Circle Gateway balance and nanopayment authorization calls;
-- Arc Testnet RPC, USDC address, and deployed escrow address.
+- Circle API key, wallet set, owner wallet, and agent wallet;
+- Circle owner and agent ARC wallet addresses;
+- Arc Testnet RPC, USDC address, and deployed escrow address;
+- real Arc Testnet escrow creation, funding, release, and refund actions.
+
+The remaining Circle integration gap is replacing the current x402-compatible payment authorization simulator with Circle Gateway/Nanopayments once that product access is available.
 
 ## Research Artifacts
 

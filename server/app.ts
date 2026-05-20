@@ -173,12 +173,14 @@ app.post("/api/agent/run", async (_req, res, next) => {
       receiptId: string;
       resource: typeof paidResource;
     };
-    const sellerAddress =
-      config.circleAgentWalletAddress ??
-      config.circleOwnerAddress ??
-      "0xd72db4da2d6fd30c4c5e98754c06f570bab99fc3";
+    const sellerAddress = config.circleAgentWalletAddress;
+
+    if (!sellerAddress && config.integrationMode !== "demo") {
+      throw new Error("CIRCLE_AGENT_WALLET_ADDRESS is required before creating real Arc escrow jobs.");
+    }
+
     const escrowJob = await createAndFundEscrowJob({
-      seller: sellerAddress,
+      seller: sellerAddress ?? "0xd72db4da2d6fd30c4c5e98754c06f570bab99fc3",
       amountUsdc: "0.25",
       termsUri: `souqagent://tasks/${taskId}`,
     });
