@@ -24,6 +24,8 @@ Best Agentic Economy Experience on Arc
 
 - Circle Developer Account email: `vt01nfts@gmail.com`
 - Team name: `VT01`
+- Team members: `VT01` solo founder-developer
+- Builder bio: Solo builder creating SouqAgent Pay, an agentic stablecoin commerce product for UAE and GCC businesses, focused on AI-managed paid services, budget policy, and Arc USDC escrow settlement.
 - GitHub repository: `https://github.com/Vt01nft/-SouqAgent-Pay`
 - Deployment target: Vercel
 

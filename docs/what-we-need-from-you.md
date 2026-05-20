@@ -6,8 +6,8 @@
 - GitHub repository: received, `https://github.com/Vt01nft/-SouqAgent-Pay`.
 - Deployment preference: received, Vercel.
 - Team name: received, `VT01`.
-- Member names: still needed if the form asks for all members.
-- Short personal/team bio for the submission.
+- Member names: solo submission, `VT01`.
+- Submission bio: Solo builder creating SouqAgent Pay, an agentic stablecoin commerce product for UAE and GCC businesses, focused on AI-managed paid services, budget policy, and Arc USDC escrow settlement.
 
 ## Required For Live Circle / Arc Integration
 

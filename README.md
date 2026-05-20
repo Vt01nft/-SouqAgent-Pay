@@ -15,6 +15,7 @@ Primary submission track: **Best Agentic Economy Experience on Arc**.
 Submission identity:
 
 - Team: **VT01**
+- Builder: **VT01, solo founder-developer**
 - Circle Developer email: **vt01nfts@gmail.com**
 - Repository: **https://github.com/Vt01nft/-SouqAgent-Pay**
 - Deployment target: **Vercel**
