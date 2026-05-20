@@ -1,5 +1,5 @@
 import express from "express";
-import { config, getReadiness } from "./config";
+import { config, getReadiness } from "./config.js";
 import {
   createDemoPaymentAuthorization,
   evaluatePolicy,
@@ -7,7 +7,7 @@ import {
   paidResource,
   receipts,
   type PaymentRequirement,
-} from "./commerce";
+} from "./commerce.js";
 
 export const app = express();
 
