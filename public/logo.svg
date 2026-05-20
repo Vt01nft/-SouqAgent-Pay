@@ -1,0 +1,18 @@
+<svg width="560" height="160" viewBox="0 0 560 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SouqAgent Pay</title>
+  <desc id="desc">SouqAgent Pay wordmark for agentic stablecoin commerce.</desc>
+  <rect width="560" height="160" rx="28" fill="#FBFBFA"/>
+  <rect x="24" y="24" width="112" height="112" rx="24" fill="#090909"/>
+  <path d="M45 86C52 67 68 56 87 57C100 58 110 63 115 72" stroke="#FFD80D" stroke-width="7" stroke-linecap="round"/>
+  <path d="M112 75C105 94 89 104 70 103C57 102 47 97 42 88" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+  <path d="M59 80C69 73 91 72 101 80C91 87 69 86 59 80Z" fill="#FFD80D"/>
+  <circle cx="80" cy="80" r="8" fill="#090909"/>
+  <circle cx="80" cy="80" r="3.5" fill="#FFD80D"/>
+  <path d="M109 45V61" stroke="#FFD80D" stroke-width="4" stroke-linecap="round"/>
+  <path d="M101 53H117" stroke="#FFD80D" stroke-width="4" stroke-linecap="round"/>
+  <path d="M104 48L114 58" stroke="#FFD80D" stroke-width="4" stroke-linecap="round"/>
+  <path d="M114 48L104 58" stroke="#FFD80D" stroke-width="4" stroke-linecap="round"/>
+  <text x="158" y="76" fill="#090909" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="0">SouqAgent</text>
+  <text x="158" y="116" fill="#52524D" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="600" letter-spacing="0">Pay</text>
+  <path d="M207 126H408" stroke="#FFD80D" stroke-width="5" stroke-linecap="round"/>
+</svg>
