@@ -9,6 +9,7 @@ import {
   receipts,
   type PaymentRequirement,
 } from "./commerce.js";
+import { getTask, listTasks, saveTask, type ProductTask } from "./store.js";
 
 export const app = express();
 
@@ -38,6 +39,29 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/readiness", (_req, res) => {
   res.json(getReadiness());
+});
+
+app.get("/api/tasks", async (_req, res, next) => {
+  try {
+    res.json({ tasks: await listTasks() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/tasks/:taskId", async (req, res, next) => {
+  try {
+    const task = await getTask(req.params.taskId);
+
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    res.json({ task });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/api/escrow/status", async (_req, res, next) => {
@@ -125,7 +149,8 @@ app.post("/api/agent/run", async (_req, res, next) => {
       ownerRequest?: string;
       maxAutonomousSpend?: string;
     };
-    const taskId = `TASK-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
+    const now = new Date();
+    const taskId = `TASK-${now.toISOString().replace(/\D/g, "").slice(0, 14)}`;
     const protocol = _req.header("x-forwarded-proto") ?? _req.protocol;
     const host = _req.header("host");
     const requestBaseUrl = host ? `${protocol}://${host}` : config.publicBaseUrl;
@@ -148,6 +173,22 @@ app.post("/api/agent/run", async (_req, res, next) => {
     const policy = evaluatePolicy(requirement.amount, Number.isFinite(maxAutonomousSpend) ? maxAutonomousSpend : 0.01);
 
     if (!policy.approved) {
+      const blockedTask: ProductTask = {
+        taskId,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        mode: config.integrationMode,
+        businessName: body.businessName ?? "VT01 Trading",
+        vendor: body.vendor ?? "Al Noor Components",
+        ownerRequest: body.ownerRequest ?? "Check supplier risk before releasing the next vendor milestone.",
+        maxAutonomousSpend: body.maxAutonomousSpend ?? "0.01",
+        selectedService: "Gulf KYB Pulse",
+        status: "human-approval-required",
+        policy,
+        receipts: [],
+      };
+      await saveTask(blockedTask);
+
       res.status(402).json({
         taskId,
         mode: config.integrationMode,
@@ -185,7 +226,7 @@ app.post("/api/agent/run", async (_req, res, next) => {
       termsUri: `souqagent://tasks/${taskId}`,
     });
 
-    res.json({
+    const responsePayload = {
       taskId,
       mode: config.integrationMode,
       businessName: body.businessName ?? "VT01 Trading",
@@ -244,7 +285,29 @@ app.post("/api/agent/run", async (_req, res, next) => {
         explorerUrls: escrowJob.explorerUrls,
       },
       receipts,
+      receiptUrl: `/receipt/${taskId}`,
+    };
+
+    await saveTask({
+      taskId,
+      createdAt: now.toISOString(),
+      updatedAt: new Date().toISOString(),
+      mode: config.integrationMode,
+      businessName: responsePayload.businessName,
+      vendor: body.vendor ?? paidData.resource.vendor,
+      ownerRequest: responsePayload.ownerRequest,
+      maxAutonomousSpend: body.maxAutonomousSpend ?? "0.01",
+      selectedService: responsePayload.selectedService,
+      status: "funded",
+      payment: responsePayload.payment,
+      result: responsePayload.result,
+      arcEscrow: responsePayload.arcEscrow,
+      receipts: responsePayload.receipts,
+      policy,
+      receiptUrl: responsePayload.receiptUrl,
     });
+
+    res.json(responsePayload);
   } catch (error) {
     next(error);
   }

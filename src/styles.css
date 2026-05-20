@@ -823,21 +823,47 @@ h3 {
   background: #ffffff;
 }
 
+.taskLedgerList {
+  display: grid;
+  gap: 10px;
+}
+
+.taskLedgerRow {
+  display: grid;
+  grid-template-columns: 1.4fr 0.45fr 0.5fr 0.7fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e2e2db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 .escrowRow span,
+.taskLedgerRow span,
 .emptyState {
   color: #686862;
   font-size: 0.82rem;
 }
 
 .escrowRow strong,
-.escrowRow span {
+.escrowRow span,
+.taskLedgerRow strong,
+.taskLedgerRow span {
   display: block;
 }
 
-.escrowRow strong {
+.escrowRow strong,
+.taskLedgerRow strong {
   margin-top: 5px;
   overflow-wrap: anywhere;
   line-height: 1.35;
+}
+
+.taskLedgerRow p {
+  margin: 8px 0 0;
+  color: #5a5a54;
+  line-height: 1.45;
 }
 
 .rowActions {
@@ -891,6 +917,67 @@ h3 {
   line-height: 1.5;
 }
 
+.receiptPage {
+  display: block;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.receiptHero {
+  min-height: 320px;
+  padding: 36px;
+  border: 1px solid #d8d8d2;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 216, 13, 0.78), rgba(255, 255, 255, 0.92)),
+    #ffffff;
+  display: grid;
+  align-content: end;
+  gap: 12px;
+}
+
+.backLink {
+  width: fit-content;
+  color: #090909;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.receiptProofGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.wideProof {
+  grid-column: 1 / -1;
+}
+
+.proofRows {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.proofRow {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e2db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.proofRow span {
+  color: #686862;
+}
+
+.proofRow strong {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 1120px) {
   main {
     grid-template-columns: 1fr;
@@ -921,8 +1008,14 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .escrowRow {
+  .escrowRow,
+  .taskLedgerRow,
+  .receiptProofGrid {
     grid-template-columns: 1fr;
+  }
+
+  .wideProof {
+    grid-column: auto;
   }
 
   .rowActions {
@@ -988,5 +1081,13 @@ h3 {
 
   .receipt b {
     text-align: left;
+  }
+
+  .receiptHero {
+    padding: 24px;
+  }
+
+  .proofRow {
+    grid-template-columns: 1fr;
   }
 }

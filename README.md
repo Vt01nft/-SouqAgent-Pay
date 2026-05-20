@@ -51,6 +51,8 @@ API endpoints:
 - `GET /api/escrow/jobs`
 - `POST /api/escrow/jobs/:jobId/release`
 - `POST /api/escrow/jobs/:jobId/refund`
+- `GET /api/tasks`
+- `GET /api/tasks/:taskId`
 
 The seller endpoint intentionally returns `402 Payment Required` until a `payment-signature` header is supplied. This models the x402 paid-resource loop used by Circle Gateway Nanopayments.
 
@@ -59,6 +61,8 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - Working React frontend with a finance-style UI.
 - Express backend with deterministic agent execution flow.
 - x402-style paid API challenge and retry model.
+- Product task ledger with Postgres support and local JSON fallback.
+- Shareable receipt pages at `/receipt/:taskId`.
 - Arc USDC escrow contract under `contracts/ArcJobEscrow.sol`.
 - Live Arc Testnet escrow creation and funding from the production API.
 - Contract compile script that emits `artifacts/ArcJobEscrow.json`.

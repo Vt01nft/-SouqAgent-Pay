@@ -124,6 +124,24 @@ type EscrowJob = {
   explorerUrl: string;
 };
 
+type ProductTask = {
+  taskId: string;
+  createdAt: string;
+  updatedAt: string;
+  mode: string;
+  businessName: string;
+  vendor: string;
+  ownerRequest: string;
+  maxAutonomousSpend: string;
+  selectedService: string;
+  status: string;
+  payment?: AgentRun["payment"];
+  result?: AgentRun["result"];
+  arcEscrow?: AgentRun["arcEscrow"];
+  receipts: Receipt[];
+  receiptUrl?: string;
+};
+
 const services: Service[] = [
   {
     id: "kyb-a",
@@ -215,9 +233,14 @@ const timeline: TimelineEvent[] = [
 ];
 
 function App() {
+  const receiptTaskId = window.location.pathname.startsWith("/receipt/")
+    ? decodeURIComponent(window.location.pathname.replace("/receipt/", ""))
+    : null;
   const [agentRun, setAgentRun] = React.useState<AgentRun | null>(null);
   const [readiness, setReadiness] = React.useState<Readiness | null>(null);
   const [escrowJobs, setEscrowJobs] = React.useState<EscrowJob[]>([]);
+  const [productTasks, setProductTasks] = React.useState<ProductTask[]>([]);
+  const [receiptTask, setReceiptTask] = React.useState<ProductTask | null>(null);
   const [escrowAction, setEscrowAction] = React.useState<string | null>(null);
   const [businessName, setBusinessName] = React.useState("VT01 Trading");
   const [vendor, setVendor] = React.useState("Al Noor Components");
@@ -233,7 +256,19 @@ function App() {
       .then((data: Readiness) => setReadiness(data))
       .catch(() => setReadiness(null));
     refreshEscrowJobs();
-  }, []);
+    refreshProductTasks();
+
+    if (receiptTaskId) {
+      fetch(`${API_BASE_URL}/api/tasks/${receiptTaskId}`)
+        .then((response) => response.json())
+        .then((data: { task: ProductTask }) => setReceiptTask(data.task))
+        .catch(() => setReceiptTask(null));
+    }
+  }, [receiptTaskId]);
+
+  if (receiptTaskId) {
+    return <ReceiptPage task={receiptTask} taskId={receiptTaskId} />;
+  }
 
   async function refreshEscrowJobs() {
     try {
@@ -245,11 +280,22 @@ function App() {
     }
   }
 
+  async function refreshProductTasks() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tasks`);
+      const data = (await response.json()) as { tasks: ProductTask[] };
+      setProductTasks(data.tasks);
+    } catch {
+      setProductTasks([]);
+    }
+  }
+
   async function settleEscrowJob(jobId: string, action: "release" | "refund") {
     setEscrowAction(`${action}-${jobId}`);
     try {
       await fetch(`${API_BASE_URL}/api/escrow/jobs/${jobId}/${action}`, { method: "POST" });
       await refreshEscrowJobs();
+      await refreshProductTasks();
     } finally {
       setEscrowAction(null);
     }
@@ -271,6 +317,7 @@ function App() {
       const data = (await response.json()) as AgentRun;
       setAgentRun(data);
       await refreshEscrowJobs();
+      await refreshProductTasks();
     } finally {
       setIsRunning(false);
     }
@@ -598,6 +645,45 @@ function App() {
           </div>
         </section>
 
+        <section className="panel taskLedger">
+          <div className="panelHeader">
+            <div>
+              <p className="eyebrow">Owner task ledger</p>
+              <h2>Saved agent tasks and receipt pages</h2>
+            </div>
+            <button className="iconTextButton" onClick={refreshProductTasks}>Refresh</button>
+          </div>
+          <div className="taskLedgerList">
+            {productTasks.length === 0 ? (
+              <p className="emptyState">No saved tasks yet. Run an agent task to create a receipt.</p>
+            ) : (
+              productTasks.map((task) => (
+                <article className="taskLedgerRow" key={task.taskId}>
+                  <div>
+                    <span>{new Date(task.createdAt).toLocaleString()}</span>
+                    <strong>{task.businessName} to {task.vendor}</strong>
+                    <p>{task.ownerRequest}</p>
+                  </div>
+                  <div>
+                    <span>Status</span>
+                    <b className={`statusPill ${task.status === "funded" ? "online" : "needed"}`}>{task.status}</b>
+                  </div>
+                  <div>
+                    <span>Policy cap</span>
+                    <strong>{task.maxAutonomousSpend} USDC</strong>
+                  </div>
+                  <div className="rowActions">
+                    <a href={task.receiptUrl ?? `/receipt/${task.taskId}`}>Receipt</a>
+                    {task.arcEscrow?.explorerUrls?.fund && (
+                      <a href={task.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
+                    )}
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
         <section id="architecture" className="panel architecture">
           <div className="panelHeader">
             <div>
@@ -631,6 +717,75 @@ function App() {
         </section>
       </section>
     </main>
+  );
+}
+
+function ReceiptPage({ task, taskId }: { task: ProductTask | null; taskId: string }) {
+  return (
+    <main className="receiptPage">
+      <section className="receiptHero">
+        <a className="backLink" href="/">Back to console</a>
+        <p className="eyebrow">SouqAgent Pay receipt</p>
+        <h1>{task ? `${task.businessName} to ${task.vendor}` : "Loading receipt..."}</h1>
+        <p className="heroCopy">
+          {task
+            ? "A saved proof page for the owner instruction, policy decision, paid service result, and Arc settlement trail."
+            : `Looking up ${taskId}.`}
+        </p>
+      </section>
+      {task && (
+        <section className="receiptProofGrid">
+          <article className="panel">
+            <p className="eyebrow">Task</p>
+            <h2>{task.taskId}</h2>
+            <p>{task.ownerRequest}</p>
+            <div className="proofRows">
+              <ProofRow label="Status" value={task.status} />
+              <ProofRow label="Mode" value={task.mode} />
+              <ProofRow label="Max autonomous spend" value={`${task.maxAutonomousSpend} USDC`} />
+              <ProofRow label="Created" value={new Date(task.createdAt).toLocaleString()} />
+            </div>
+          </article>
+          <article className="panel">
+            <p className="eyebrow">Payment and result</p>
+            <h2>{task.selectedService}</h2>
+            <p>{task.result?.summary ?? "Result pending."}</p>
+            <div className="proofRows">
+              <ProofRow label="Payment rail" value={task.payment?.rail ?? "pending"} />
+              <ProofRow label="Payment amount" value={task.payment?.amount ?? "pending"} />
+              <ProofRow label="Authorization" value={task.payment?.authorization ?? "pending"} />
+              <ProofRow label="Recommendation" value={task.result?.recommendation ?? "pending"} />
+            </div>
+          </article>
+          <article className="panel wideProof">
+            <p className="eyebrow">Arc settlement</p>
+            <h2>{task.arcEscrow ? `Job ${task.arcEscrow.jobId} ${task.arcEscrow.state}` : "No escrow created"}</h2>
+            <div className="proofRows">
+              <ProofRow label="Amount" value={task.arcEscrow?.amount ?? "pending"} />
+              <ProofRow label="Contract" value={task.arcEscrow?.contract ?? "pending"} />
+              <ProofRow label="Fund tx" value={task.arcEscrow?.fundTxHash ?? "pending"} />
+            </div>
+            {task.arcEscrow?.explorerUrls && (
+              <div className="linkStrip">
+                <a href={task.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>
+                <a href={task.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>
+                <a href={task.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>
+                <a href={task.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
+              </div>
+            )}
+          </article>
+        </section>
+      )}
+    </main>
+  );
+}
+
+function ProofRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="proofRow">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 

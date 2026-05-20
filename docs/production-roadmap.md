@@ -24,9 +24,10 @@ SouqAgent Pay is now structured as a real product with demo mode as a fallback. 
    - Add deliverable upload / proof-of-completion before release.
    - Add role-aware controls so sellers cannot release their own jobs.
 
-3. Add persistence.
-   - Store tasks, policy decisions, receipts, and escrow jobs.
-   - Recommended first database: Postgres or Supabase.
+3. Enable durable production persistence.
+   - Task, policy, receipt, and escrow records now flow through a storage adapter.
+   - Add a Vercel Postgres/Neon `DATABASE_URL` after marketplace terms are accepted.
+   - Local development uses `.data/tasks.json` as a fallback.
 
 4. Add authentication.
    - Business owner login.

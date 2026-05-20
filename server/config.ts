@@ -19,6 +19,9 @@ export type AppConfig = {
   circleAgentWalletId?: string;
   circleOwnerWalletAddress?: string;
   circleAgentWalletAddress?: string;
+  databaseUrl?: string;
+  supabaseUrl?: string;
+  supabasePublishableKey?: string;
 };
 
 function integrationMode(value: string | undefined): IntegrationMode {
@@ -46,6 +49,9 @@ export const config: AppConfig = {
   circleAgentWalletId: process.env.CIRCLE_AGENT_WALLET_ID,
   circleOwnerWalletAddress: process.env.CIRCLE_OWNER_WALLET_ADDRESS,
   circleAgentWalletAddress: process.env.CIRCLE_AGENT_WALLET_ADDRESS,
+  databaseUrl: process.env.DATABASE_URL,
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
 };
 
 export function getReadiness() {
@@ -85,6 +91,14 @@ export function getReadiness() {
       agentWalletConfigured: Boolean(config.circleAgentWalletId),
       ownerWalletAddress: config.circleOwnerWalletAddress ?? "not-configured",
       agentWalletAddress: config.circleAgentWalletAddress ?? "not-configured",
+    },
+    storage: {
+      taskLedger: config.supabaseUrl && config.supabasePublishableKey
+        ? "supabase"
+        : config.databaseUrl
+          ? "postgres"
+          : "local-json-fallback",
+      durable: Boolean((config.supabaseUrl && config.supabasePublishableKey) || config.databaseUrl),
     },
   };
 }
