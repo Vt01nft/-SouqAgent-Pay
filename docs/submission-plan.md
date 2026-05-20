@@ -46,6 +46,8 @@ Included:
 - Deployment transaction: `0xcc35de9fde88a79fb7dce33051cf233a830fe007a6e4338db8a7d6e4b350fe24`
 - Production-created funded job: `2`
 - Production fund transaction: `0xf281f5431a708facc99ed21a93b98d456d4d515be5ddf2e7f84e75a29044f631`
+- Release action verified on job `3`: `0x5fac07c8e2602fb71b467ba9086ab75dc2223b7c986a8aea8ffcd039ce4d9e21`
+- Refund action verified on job `2`: `0x87b8a818b8a79c0fb151ba2c2eba1dbde49ecad4b1b62a331fe7cb948e51d2ba`
 
 ## Architecture
 

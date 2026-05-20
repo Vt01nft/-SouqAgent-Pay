@@ -1,6 +1,6 @@
 import express from "express";
 import { config, getReadiness } from "./config.js";
-import { createAndFundEscrowJob, getEscrowStatus } from "./arc.js";
+import { createAndFundEscrowJob, getEscrowStatus, listEscrowJobs, refundEscrowJob, releaseEscrowJob } from "./arc.js";
 import {
   createDemoPaymentAuthorization,
   evaluatePolicy,
@@ -43,6 +43,30 @@ app.get("/api/readiness", (_req, res) => {
 app.get("/api/escrow/status", async (_req, res, next) => {
   try {
     res.json(await getEscrowStatus());
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/escrow/jobs", async (_req, res, next) => {
+  try {
+    res.json({ jobs: await listEscrowJobs() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/escrow/jobs/:jobId/release", async (req, res, next) => {
+  try {
+    res.json(await releaseEscrowJob(req.params.jobId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/escrow/jobs/:jobId/refund", async (req, res, next) => {
+  try {
+    res.json(await refundEscrowJob(req.params.jobId));
   } catch (error) {
     next(error);
   }

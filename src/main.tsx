@@ -113,6 +113,17 @@ type Readiness = {
   };
 };
 
+type EscrowJob = {
+  jobId: string;
+  buyer: string;
+  seller: string;
+  amount: string;
+  termsUri: string;
+  deliverableUri: string;
+  state: string;
+  explorerUrl: string;
+};
+
 const services: Service[] = [
   {
     id: "kyb-a",
@@ -206,6 +217,8 @@ const timeline: TimelineEvent[] = [
 function App() {
   const [agentRun, setAgentRun] = React.useState<AgentRun | null>(null);
   const [readiness, setReadiness] = React.useState<Readiness | null>(null);
+  const [escrowJobs, setEscrowJobs] = React.useState<EscrowJob[]>([]);
+  const [escrowAction, setEscrowAction] = React.useState<string | null>(null);
   const [businessName, setBusinessName] = React.useState("VT01 Trading");
   const [vendor, setVendor] = React.useState("Al Noor Components");
   const [maxAutonomousSpend, setMaxAutonomousSpend] = React.useState("0.01");
@@ -219,7 +232,28 @@ function App() {
       .then((response) => response.json())
       .then((data: Readiness) => setReadiness(data))
       .catch(() => setReadiness(null));
+    refreshEscrowJobs();
   }, []);
+
+  async function refreshEscrowJobs() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/escrow/jobs`);
+      const data = (await response.json()) as { jobs: EscrowJob[] };
+      setEscrowJobs(data.jobs);
+    } catch {
+      setEscrowJobs([]);
+    }
+  }
+
+  async function settleEscrowJob(jobId: string, action: "release" | "refund") {
+    setEscrowAction(`${action}-${jobId}`);
+    try {
+      await fetch(`${API_BASE_URL}/api/escrow/jobs/${jobId}/${action}`, { method: "POST" });
+      await refreshEscrowJobs();
+    } finally {
+      setEscrowAction(null);
+    }
+  }
 
   async function runAgentTask() {
     setIsRunning(true);
@@ -236,6 +270,7 @@ function App() {
       });
       const data = (await response.json()) as AgentRun;
       setAgentRun(data);
+      await refreshEscrowJobs();
     } finally {
       setIsRunning(false);
     }
@@ -510,6 +545,53 @@ function App() {
             )}
           </section>
         )}
+
+        <section className="panel escrowHistory">
+          <div className="panelHeader">
+            <div>
+              <p className="eyebrow">Arc escrow history</p>
+              <h2>Onchain jobs created by SouqAgent Pay</h2>
+            </div>
+            <button className="iconTextButton" onClick={refreshEscrowJobs}>Refresh</button>
+          </div>
+          <div className="escrowTable">
+            {escrowJobs.length === 0 ? (
+              <p className="emptyState">No onchain escrow jobs yet. Run an agent task to create one.</p>
+            ) : (
+              escrowJobs.map((job) => (
+                <article className="escrowRow" key={job.jobId}>
+                  <div>
+                    <span>Job #{job.jobId}</span>
+                    <strong>{job.amount}</strong>
+                  </div>
+                  <div>
+                    <span>Seller</span>
+                    <strong>{job.seller}</strong>
+                  </div>
+                  <div>
+                    <span>Status</span>
+                    <b className={`statusPill ${job.state === "funded" ? "online" : ""}`}>{job.state}</b>
+                  </div>
+                  <div className="rowActions">
+                    <a href={job.explorerUrl} target="_blank" rel="noreferrer">ArcScan</a>
+                    <button
+                      disabled={job.state !== "funded" || escrowAction === `release-${job.jobId}`}
+                      onClick={() => settleEscrowJob(job.jobId, "release")}
+                    >
+                      {escrowAction === `release-${job.jobId}` ? "Releasing..." : "Release"}
+                    </button>
+                    <button
+                      disabled={job.state !== "funded" || escrowAction === `refund-${job.jobId}`}
+                      onClick={() => settleEscrowJob(job.jobId, "refund")}
+                    >
+                      {escrowAction === `refund-${job.jobId}` ? "Refunding..." : "Refund"}
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
 
         <section id="architecture" className="panel architecture">
           <div className="panelHeader">
