@@ -254,14 +254,39 @@ function App() {
 
       <section className="workspace">
         <header className="topbar">
+          <div className="floatLine lineOne" />
+          <div className="floatLine lineTwo" />
+          <div className="floatLine lineThree" />
           <div>
             <p className="eyebrow">UAE/GCC SME spending desk</p>
             <h1>AI agents that can spend USDC with controls, receipts, and settlement proof.</h1>
+            <p className="heroCopy">
+              SouqAgent Pay is a business console for owners who want an AI agent to buy paid data,
+              verify suppliers, and prepare USDC settlement without handing the agent unlimited spend.
+            </p>
           </div>
           <button className="primaryButton" disabled={isRunning} onClick={runDemoFlow}>
             {isRunning ? "Running..." : "Run demo flow"} <ArrowRight size={18} />
           </button>
         </header>
+
+        <section className="grid userJourneyGrid">
+          <JourneyStep
+            number="01"
+            title="Owner sets policy"
+            text="A business owner funds a budget, chooses allowed service categories, and sets the autonomous payment cap."
+          />
+          <JourneyStep
+            number="02"
+            title="Agent buys a service"
+            text="The agent searches paid APIs, receives an HTTP 402 payment request, checks policy, and authorizes the payment."
+          />
+          <JourneyStep
+            number="03"
+            title="Business gets proof"
+            text="The app returns the paid result, receipt trail, and Arc escrow status so the owner can approve settlement."
+          />
+        </section>
 
         <section id="console" className="grid consoleGrid">
           <div className="panel taskPanel">
@@ -503,6 +528,16 @@ function FlowBox({ icon: Icon, title, text }: { icon: React.ElementType; title: 
 function Feedback({ title, text }: { title: string; text: string }) {
   return (
     <article className="feedbackItem">
+      <strong>{title}</strong>
+      <p>{text}</p>
+    </article>
+  );
+}
+
+function JourneyStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <article className="journeyStep">
+      <span>{number}</span>
       <strong>{title}</strong>
       <p>{text}</p>
     </article>
