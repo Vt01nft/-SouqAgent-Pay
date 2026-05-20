@@ -5,3 +5,5 @@ dist
 *.log
 
 .vercel
+recovery_file_*.dat
+*recovery*.dat
