@@ -22,6 +22,7 @@ export type AppConfig = {
   databaseUrl?: string;
   supabaseUrl?: string;
   supabasePublishableKey?: string;
+  ownerAccessCode?: string;
 };
 
 function integrationMode(value: string | undefined): IntegrationMode {
@@ -52,6 +53,7 @@ export const config: AppConfig = {
   databaseUrl: process.env.DATABASE_URL,
   supabaseUrl: process.env.SUPABASE_URL,
   supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
+  ownerAccessCode: process.env.OWNER_ACCESS_CODE,
 };
 
 export function getReadiness() {
@@ -99,6 +101,9 @@ export function getReadiness() {
           ? "postgres"
           : "local-json-fallback",
       durable: Boolean((config.supabaseUrl && config.supabasePublishableKey) || config.databaseUrl),
+    },
+    security: {
+      ownerAccessConfigured: Boolean(config.ownerAccessCode),
     },
   };
 }

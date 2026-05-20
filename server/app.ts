@@ -16,7 +16,7 @@ export const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, payment-signature");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, payment-signature, x-owner-access-code");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
 
   if (req.method === "OPTIONS") {
@@ -26,6 +26,25 @@ app.use((req, res, next) => {
 
   next();
 });
+
+function requireOwnerAccess(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!config.ownerAccessCode) {
+    next();
+    return;
+  }
+
+  const providedCode = req.header("x-owner-access-code");
+
+  if (providedCode !== config.ownerAccessCode) {
+    res.status(401).json({
+      error: "Owner access required",
+      detail: "Enter the owner access code to run agents, view the private ledger, or settle escrow.",
+    });
+    return;
+  }
+
+  next();
+}
 
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -41,7 +60,7 @@ app.get("/api/readiness", (_req, res) => {
   res.json(getReadiness());
 });
 
-app.get("/api/tasks", async (_req, res, next) => {
+app.get("/api/tasks", requireOwnerAccess, async (_req, res, next) => {
   try {
     res.json({ tasks: await listTasks() });
   } catch (error) {
@@ -72,7 +91,7 @@ app.get("/api/escrow/status", async (_req, res, next) => {
   }
 });
 
-app.get("/api/escrow/jobs", async (_req, res, next) => {
+app.get("/api/escrow/jobs", requireOwnerAccess, async (_req, res, next) => {
   try {
     res.json({ jobs: await listEscrowJobs() });
   } catch (error) {
@@ -80,17 +99,17 @@ app.get("/api/escrow/jobs", async (_req, res, next) => {
   }
 });
 
-app.post("/api/escrow/jobs/:jobId/release", async (req, res, next) => {
+app.post("/api/escrow/jobs/:jobId/release", requireOwnerAccess, async (req, res, next) => {
   try {
-    res.json(await releaseEscrowJob(req.params.jobId));
+    res.json(await releaseEscrowJob(String(req.params.jobId)));
   } catch (error) {
     next(error);
   }
 });
 
-app.post("/api/escrow/jobs/:jobId/refund", async (req, res, next) => {
+app.post("/api/escrow/jobs/:jobId/refund", requireOwnerAccess, async (req, res, next) => {
   try {
-    res.json(await refundEscrowJob(req.params.jobId));
+    res.json(await refundEscrowJob(String(req.params.jobId)));
   } catch (error) {
     next(error);
   }
@@ -141,7 +160,7 @@ app.get("/api/demo/state", (_req, res) => {
   });
 });
 
-app.post("/api/agent/run", async (_req, res, next) => {
+app.post("/api/agent/run", requireOwnerAccess, async (_req, res, next) => {
   try {
     const body = _req.body as {
       businessName?: string;

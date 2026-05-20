@@ -354,6 +354,44 @@ h3 {
   padding: 20px;
 }
 
+.accessPanel {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.accessPanel p {
+  margin: 8px 0 0;
+  color: #5a5a54;
+  line-height: 1.5;
+}
+
+.accessControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.accessControls input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #d8d8d2;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #ffffff;
+}
+
+.accessMessage {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border: 1px solid #e2e2db;
+  border-radius: 8px;
+  background: #ffffff;
+  font-weight: 700;
+}
+
 .panelHeader {
   display: flex;
   justify-content: space-between;
@@ -1004,7 +1042,8 @@ h3 {
   .runGrid,
   .settlementStrip,
   .architectureFlow,
-  .feedbackGrid {
+  .feedbackGrid,
+  .accessPanel {
     grid-template-columns: 1fr;
   }
 
@@ -1064,6 +1103,10 @@ h3 {
   }
 
   .taskForm {
+    grid-template-columns: 1fr;
+  }
+
+  .accessControls {
     grid-template-columns: 1fr;
   }
 

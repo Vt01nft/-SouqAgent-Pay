@@ -111,6 +111,9 @@ type Readiness = {
     ownerWalletAddress: string;
     agentWalletAddress: string;
   };
+  security: {
+    ownerAccessConfigured: boolean;
+  };
 };
 
 type EscrowJob = {
@@ -140,6 +143,12 @@ type ProductTask = {
   arcEscrow?: AgentRun["arcEscrow"];
   receipts: Receipt[];
   receiptUrl?: string;
+};
+
+type OwnerFetchInit = {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
 };
 
 const services: Service[] = [
@@ -241,6 +250,8 @@ function App() {
   const [escrowJobs, setEscrowJobs] = React.useState<EscrowJob[]>([]);
   const [productTasks, setProductTasks] = React.useState<ProductTask[]>([]);
   const [receiptTask, setReceiptTask] = React.useState<ProductTask | null>(null);
+  const [ownerAccessCode, setOwnerAccessCode] = React.useState(() => localStorage.getItem("souqagent-owner-code") ?? "");
+  const [accessMessage, setAccessMessage] = React.useState("");
   const [escrowAction, setEscrowAction] = React.useState<string | null>(null);
   const [businessName, setBusinessName] = React.useState("VT01 Trading");
   const [vendor, setVendor] = React.useState("Al Noor Components");
@@ -250,13 +261,57 @@ function App() {
   );
   const [isRunning, setIsRunning] = React.useState(false);
 
+  const ownerFetch = React.useCallback((url: string, init?: OwnerFetchInit) => {
+    return fetch(url, {
+      ...init,
+      headers: {
+        "x-owner-access-code": ownerAccessCode,
+        ...(init?.headers ?? {}),
+      },
+    });
+  }, [ownerAccessCode]);
+
+  const refreshEscrowJobs = React.useCallback(async () => {
+    if (!ownerAccessCode) {
+      setEscrowJobs([]);
+      return;
+    }
+
+    try {
+      const response = await ownerFetch(`${API_BASE_URL}/api/escrow/jobs`);
+      const data = (await response.json()) as { jobs: EscrowJob[] };
+      setEscrowJobs(data.jobs);
+    } catch {
+      setEscrowJobs([]);
+    }
+  }, [ownerAccessCode, ownerFetch]);
+
+  const refreshProductTasks = React.useCallback(async () => {
+    if (!ownerAccessCode) {
+      setProductTasks([]);
+      return;
+    }
+
+    try {
+      const response = await ownerFetch(`${API_BASE_URL}/api/tasks`);
+      const data = (await response.json()) as { tasks: ProductTask[] };
+      setProductTasks(data.tasks);
+    } catch {
+      setProductTasks([]);
+    }
+  }, [ownerAccessCode, ownerFetch]);
+
   React.useEffect(() => {
     fetch(`${API_BASE_URL}/api/readiness`)
       .then((response) => response.json())
       .then((data: Readiness) => setReadiness(data))
       .catch(() => setReadiness(null));
-    refreshEscrowJobs();
-    refreshProductTasks();
+    if (ownerAccessCode) {
+      void Promise.resolve().then(async () => {
+        await refreshEscrowJobs();
+        await refreshProductTasks();
+      });
+    }
 
     if (receiptTaskId) {
       fetch(`${API_BASE_URL}/api/tasks/${receiptTaskId}`)
@@ -264,36 +319,31 @@ function App() {
         .then((data: { task: ProductTask }) => setReceiptTask(data.task))
         .catch(() => setReceiptTask(null));
     }
-  }, [receiptTaskId]);
+  }, [ownerAccessCode, receiptTaskId, refreshEscrowJobs, refreshProductTasks]);
 
   if (receiptTaskId) {
     return <ReceiptPage task={receiptTask} taskId={receiptTaskId} />;
   }
 
-  async function refreshEscrowJobs() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/escrow/jobs`);
-      const data = (await response.json()) as { jobs: EscrowJob[] };
-      setEscrowJobs(data.jobs);
-    } catch {
-      setEscrowJobs([]);
-    }
+  function saveOwnerAccess() {
+    const trimmedCode = ownerAccessCode.trim();
+    localStorage.setItem("souqagent-owner-code", trimmedCode);
+    setOwnerAccessCode(trimmedCode);
+    setAccessMessage(trimmedCode ? "Owner access saved for this browser." : "Owner access cleared.");
   }
 
-  async function refreshProductTasks() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/tasks`);
-      const data = (await response.json()) as { tasks: ProductTask[] };
-      setProductTasks(data.tasks);
-    } catch {
-      setProductTasks([]);
-    }
+  function clearOwnerAccess() {
+    localStorage.removeItem("souqagent-owner-code");
+    setOwnerAccessCode("");
+    setAccessMessage("Owner access cleared.");
+    setEscrowJobs([]);
+    setProductTasks([]);
   }
 
   async function settleEscrowJob(jobId: string, action: "release" | "refund") {
     setEscrowAction(`${action}-${jobId}`);
     try {
-      await fetch(`${API_BASE_URL}/api/escrow/jobs/${jobId}/${action}`, { method: "POST" });
+      await ownerFetch(`${API_BASE_URL}/api/escrow/jobs/${jobId}/${action}`, { method: "POST" });
       await refreshEscrowJobs();
       await refreshProductTasks();
     } finally {
@@ -304,7 +354,7 @@ function App() {
   async function runAgentTask() {
     setIsRunning(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/agent/run`, {
+      const response = await ownerFetch(`${API_BASE_URL}/api/agent/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -315,6 +365,10 @@ function App() {
         }),
       });
       const data = (await response.json()) as AgentRun;
+      if (!response.ok) {
+        setAccessMessage("Owner access code is required or invalid.");
+        return;
+      }
       setAgentRun(data);
       await refreshEscrowJobs();
       await refreshProductTasks();
@@ -368,10 +422,29 @@ function App() {
               verify suppliers, and prepare USDC settlement without handing the agent unlimited spend.
             </p>
           </div>
-          <button className="primaryButton" disabled={isRunning} onClick={runAgentTask}>
+          <button className="primaryButton" disabled={isRunning || !ownerAccessCode} onClick={runAgentTask}>
             {isRunning ? "Running agent..." : "Run agent task"} <ArrowRight size={18} />
           </button>
         </header>
+
+        <section className="panel accessPanel">
+          <div>
+            <p className="eyebrow">Owner access</p>
+            <h2>{ownerAccessCode ? "Private controls unlocked in this browser" : "Enter owner code to unlock spending controls"}</h2>
+            <p>Agent spending, private task history, and escrow settlement actions are protected. Receipt pages remain shareable.</p>
+          </div>
+          <div className="accessControls">
+            <input
+              type="password"
+              placeholder="Owner access code"
+              value={ownerAccessCode}
+              onChange={(event) => setOwnerAccessCode(event.target.value)}
+            />
+            <button className="secondaryButton" onClick={saveOwnerAccess}>Unlock</button>
+            <button className="iconTextButton" onClick={clearOwnerAccess}>Clear</button>
+          </div>
+          {accessMessage && <p className="accessMessage">{accessMessage}</p>}
+        </section>
 
         <section className="grid userJourneyGrid">
           <JourneyStep
@@ -421,8 +494,8 @@ function App() {
                 Owner instruction
                 <textarea value={ownerRequest} onChange={(event) => setOwnerRequest(event.target.value)} />
               </label>
-              <button className="secondaryButton" disabled={isRunning} onClick={runAgentTask}>
-                {isRunning ? "Executing..." : "Authorize agent within policy"}
+              <button className="secondaryButton" disabled={isRunning || !ownerAccessCode} onClick={runAgentTask}>
+                {ownerAccessCode ? (isRunning ? "Executing..." : "Authorize agent within policy") : "Unlock owner access first"}
               </button>
             </div>
             <div className="metrics">
@@ -484,6 +557,11 @@ function App() {
                 label="Escrow contract"
                 value={readiness.arc.jobEscrowAddress}
                 status={readiness.arc.jobEscrowAddress === "not-configured" ? "needed" : "online"}
+              />
+              <ReadinessCard
+                label="Owner controls"
+                value={readiness.security.ownerAccessConfigured ? "protected" : "open"}
+                status={readiness.security.ownerAccessConfigured ? "online" : "needed"}
               />
             </div>
             {!readiness.testnetReady && (

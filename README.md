@@ -63,6 +63,7 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - x402-style paid API challenge and retry model.
 - Product task ledger with Postgres support and local JSON fallback.
 - Shareable receipt pages at `/receipt/:taskId`.
+- Owner access code guard for agent spending, private task history, and escrow settlement actions.
 - Arc USDC escrow contract under `contracts/ArcJobEscrow.sol`.
 - Live Arc Testnet escrow creation and funding from the production API.
 - Contract compile script that emits `artifacts/ArcJobEscrow.json`.
@@ -86,6 +87,10 @@ Configured testnet rails include:
 - real Arc Testnet escrow creation, funding, release, and refund actions.
 
 The remaining Circle integration gap is replacing the current x402-compatible payment authorization simulator with Circle Gateway/Nanopayments once that product access is available.
+
+## Owner Access
+
+Set `OWNER_ACCESS_CODE` in local and deployment environments. The frontend asks for this code before it can run agents, load the private task ledger, list escrow jobs, or release/refund funded escrow jobs. Public receipt URLs remain readable so they can be shared with judges or counterparties.
 
 ## Research Artifacts
 
