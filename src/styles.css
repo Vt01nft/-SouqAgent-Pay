@@ -852,7 +852,7 @@ h3 {
 
 .escrowRow {
   display: grid;
-  grid-template-columns: 0.5fr 1.2fr 0.5fr 1fr;
+  grid-template-columns: 0.45fr 1.1fr 0.45fr 0.45fr 1fr;
   gap: 12px;
   align-items: center;
   padding: 14px;
@@ -875,6 +875,54 @@ h3 {
   border: 1px solid #e2e2db;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.deliverableBlock {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e2db;
+  border-radius: 8px;
+  background: #f8f8f4;
+}
+
+.deliverableBlock span,
+.deliverableBlock strong {
+  display: block;
+}
+
+.deliverableBlock span {
+  color: #686862;
+  font-size: 0.82rem;
+}
+
+.deliverableBlock p {
+  margin: 8px 0 0;
+  color: #5a5a54;
+  line-height: 1.45;
+}
+
+.deliverableForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.deliverableForm input,
+.deliverableForm textarea {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #d8d8d2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.deliverableForm textarea {
+  resize: vertical;
 }
 
 .escrowRow span,
@@ -1049,7 +1097,9 @@ h3 {
 
   .escrowRow,
   .taskLedgerRow,
-  .receiptProofGrid {
+  .receiptProofGrid,
+  .deliverableBlock,
+  .deliverableForm {
     grid-template-columns: 1fr;
   }
 

@@ -82,11 +82,15 @@ type AgentRun = {
     approveTxHash?: string;
     createTxHash?: string;
     fundTxHash?: string;
+    releaseTxHash?: string;
+    refundTxHash?: string;
     explorerUrls?: {
-      approve: string;
-      create: string;
-      fund: string;
-      contract: string;
+      approve?: string;
+      create?: string;
+      fund?: string;
+      contract?: string;
+      release?: string;
+      refund?: string;
     };
   };
   receipts: Receipt[];
@@ -140,6 +144,12 @@ type ProductTask = {
   status: string;
   payment?: AgentRun["payment"];
   result?: AgentRun["result"];
+  deliverable?: {
+    uri: string;
+    notes: string;
+    submittedAt: string;
+    submittedBy: string;
+  };
   arcEscrow?: AgentRun["arcEscrow"];
   receipts: Receipt[];
   receiptUrl?: string;
@@ -253,6 +263,7 @@ function App() {
   const [ownerAccessCode, setOwnerAccessCode] = React.useState(() => localStorage.getItem("souqagent-owner-code") ?? "");
   const [accessMessage, setAccessMessage] = React.useState("");
   const [escrowAction, setEscrowAction] = React.useState<string | null>(null);
+  const [deliverableInputs, setDeliverableInputs] = React.useState<Record<string, { uri: string; notes: string }>>({});
   const [businessName, setBusinessName] = React.useState("VT01 Trading");
   const [vendor, setVendor] = React.useState("Al Noor Components");
   const [maxAutonomousSpend, setMaxAutonomousSpend] = React.useState("0.01");
@@ -346,6 +357,42 @@ function App() {
       await ownerFetch(`${API_BASE_URL}/api/escrow/jobs/${jobId}/${action}`, { method: "POST" });
       await refreshEscrowJobs();
       await refreshProductTasks();
+    } finally {
+      setEscrowAction(null);
+    }
+  }
+
+  async function submitDeliverableProof(taskId: string) {
+    const input = deliverableInputs[taskId];
+    if (!input?.uri.trim() || !input?.notes.trim()) {
+      setAccessMessage("Deliverable URI and notes are required before release.");
+      return;
+    }
+
+    setEscrowAction(`deliver-${taskId}`);
+    try {
+      const response = await ownerFetch(`${API_BASE_URL}/api/tasks/${taskId}/deliverable`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uri: input.uri,
+          notes: input.notes,
+          submittedBy: "seller/operator",
+        }),
+      });
+
+      if (!response.ok) {
+        setAccessMessage("Could not save deliverable proof.");
+        return;
+      }
+
+      setDeliverableInputs((current) => ({
+        ...current,
+        [taskId]: { uri: "", notes: "" },
+      }));
+      setAccessMessage("Deliverable proof saved. Escrow can now be released.");
+      await refreshProductTasks();
+      await refreshEscrowJobs();
     } finally {
       setEscrowAction(null);
     }
@@ -667,10 +714,10 @@ function App() {
             </div>
             {agentRun.arcEscrow.explorerUrls && (
               <div className="linkStrip">
-                <a href={agentRun.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>
-                <a href={agentRun.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>
-                <a href={agentRun.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>
-                <a href={agentRun.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
+                {agentRun.arcEscrow.explorerUrls.contract && <a href={agentRun.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>}
+                {agentRun.arcEscrow.explorerUrls.approve && <a href={agentRun.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>}
+                {agentRun.arcEscrow.explorerUrls.create && <a href={agentRun.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>}
+                {agentRun.arcEscrow.explorerUrls.fund && <a href={agentRun.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>}
               </div>
             )}
           </section>
@@ -688,37 +735,50 @@ function App() {
             {escrowJobs.length === 0 ? (
               <p className="emptyState">No onchain escrow jobs yet. Run an agent task to create one.</p>
             ) : (
-              escrowJobs.map((job) => (
-                <article className="escrowRow" key={job.jobId}>
-                  <div>
-                    <span>Job #{job.jobId}</span>
-                    <strong>{job.amount}</strong>
-                  </div>
-                  <div>
-                    <span>Seller</span>
-                    <strong>{job.seller}</strong>
-                  </div>
-                  <div>
-                    <span>Status</span>
-                    <b className={`statusPill ${job.state === "funded" ? "online" : ""}`}>{job.state}</b>
-                  </div>
-                  <div className="rowActions">
-                    <a href={job.explorerUrl} target="_blank" rel="noreferrer">ArcScan</a>
-                    <button
-                      disabled={job.state !== "funded" || escrowAction === `release-${job.jobId}`}
-                      onClick={() => settleEscrowJob(job.jobId, "release")}
-                    >
-                      {escrowAction === `release-${job.jobId}` ? "Releasing..." : "Release"}
-                    </button>
-                    <button
-                      disabled={job.state !== "funded" || escrowAction === `refund-${job.jobId}`}
-                      onClick={() => settleEscrowJob(job.jobId, "refund")}
-                    >
-                      {escrowAction === `refund-${job.jobId}` ? "Refunding..." : "Refund"}
-                    </button>
-                  </div>
-                </article>
-              ))
+              escrowJobs.map((job) => {
+                const taskForJob = productTasks.find((task) => task.arcEscrow?.jobId === job.jobId);
+                const hasDeliverable = Boolean(taskForJob?.deliverable);
+                const canRelease = (job.state === "funded" || job.state === "delivered") && hasDeliverable;
+
+                return (
+                  <article className="escrowRow" key={job.jobId}>
+                    <div>
+                      <span>Job #{job.jobId}</span>
+                      <strong>{job.amount}</strong>
+                    </div>
+                    <div>
+                      <span>Seller</span>
+                      <strong>{job.seller}</strong>
+                    </div>
+                    <div>
+                      <span>Proof</span>
+                      <b className={`statusPill ${hasDeliverable ? "online" : "needed"}`}>
+                        {hasDeliverable ? "submitted" : "needed"}
+                      </b>
+                    </div>
+                    <div>
+                      <span>Status</span>
+                      <b className={`statusPill ${job.state === "funded" || job.state === "delivered" ? "online" : ""}`}>{job.state}</b>
+                    </div>
+                    <div className="rowActions">
+                      <a href={job.explorerUrl} target="_blank" rel="noreferrer">ArcScan</a>
+                      {taskForJob?.receiptUrl && <a href={taskForJob.receiptUrl}>Receipt</a>}
+                      <button
+                        disabled={!canRelease || escrowAction === `release-${job.jobId}`}
+                        onClick={() => settleEscrowJob(job.jobId, "release")}
+                      >
+                        {escrowAction === `release-${job.jobId}` ? "Releasing..." : "Release"}
+                      </button>
+                      <button
+                        disabled={job.state !== "funded" || escrowAction === `refund-${job.jobId}`}
+                        onClick={() => settleEscrowJob(job.jobId, "refund")}
+                      >
+                        {escrowAction === `refund-${job.jobId}` ? "Refunding..." : "Refund"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
         </section>
@@ -744,7 +804,7 @@ function App() {
                   </div>
                   <div>
                     <span>Status</span>
-                    <b className={`statusPill ${task.status === "funded" ? "online" : "needed"}`}>{task.status}</b>
+                    <b className={`statusPill ${task.status === "funded" || task.status === "delivered" ? "online" : "needed"}`}>{task.status}</b>
                   </div>
                   <div>
                     <span>Policy cap</span>
@@ -756,6 +816,56 @@ function App() {
                       <a href={task.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
                     )}
                   </div>
+                  {task.arcEscrow && (
+                    <div className="deliverableBlock">
+                      <div>
+                        <span>Deliverable proof</span>
+                        <strong>{task.deliverable ? "Submitted" : "Required before release"}</strong>
+                        {task.deliverable && (
+                          <p>
+                            {task.deliverable.notes} <a href={task.deliverable.uri} target="_blank" rel="noreferrer">Open proof</a>
+                          </p>
+                        )}
+                      </div>
+                      {!task.deliverable && task.status !== "released" && task.status !== "refunded" && (
+                        <div className="deliverableForm">
+                          <input
+                            placeholder="Proof URL, invoice link, or shipment reference"
+                            value={deliverableInputs[task.taskId]?.uri ?? ""}
+                            onChange={(event) =>
+                              setDeliverableInputs((current) => ({
+                                ...current,
+                                [task.taskId]: {
+                                  uri: event.target.value,
+                                  notes: current[task.taskId]?.notes ?? "",
+                                },
+                              }))
+                            }
+                          />
+                          <textarea
+                            placeholder="Delivery notes"
+                            value={deliverableInputs[task.taskId]?.notes ?? ""}
+                            onChange={(event) =>
+                              setDeliverableInputs((current) => ({
+                                ...current,
+                                [task.taskId]: {
+                                  uri: current[task.taskId]?.uri ?? "",
+                                  notes: event.target.value,
+                                },
+                              }))
+                            }
+                          />
+                          <button
+                            className="secondaryButton"
+                            disabled={escrowAction === `deliver-${task.taskId}`}
+                            onClick={() => submitDeliverableProof(task.taskId)}
+                          >
+                            {escrowAction === `deliver-${task.taskId}` ? "Saving proof..." : "Submit proof"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </article>
               ))
             )}
@@ -842,13 +952,35 @@ function ReceiptPage({ task, taskId }: { task: ProductTask | null; taskId: strin
               <ProofRow label="Amount" value={task.arcEscrow?.amount ?? "pending"} />
               <ProofRow label="Contract" value={task.arcEscrow?.contract ?? "pending"} />
               <ProofRow label="Fund tx" value={task.arcEscrow?.fundTxHash ?? "pending"} />
+              <ProofRow label="Release tx" value={task.arcEscrow?.releaseTxHash ?? "pending"} />
+              <ProofRow label="Refund tx" value={task.arcEscrow?.refundTxHash ?? "pending"} />
             </div>
             {task.arcEscrow?.explorerUrls && (
               <div className="linkStrip">
-                <a href={task.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>
-                <a href={task.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>
-                <a href={task.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>
-                <a href={task.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
+                {task.arcEscrow.explorerUrls.contract && <a href={task.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>}
+                {task.arcEscrow.explorerUrls.approve && <a href={task.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>}
+                {task.arcEscrow.explorerUrls.create && <a href={task.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>}
+                {task.arcEscrow.explorerUrls.fund && <a href={task.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>}
+                {task.arcEscrow.explorerUrls.release && <a href={task.arcEscrow.explorerUrls.release} target="_blank" rel="noreferrer">Release tx</a>}
+                {task.arcEscrow.explorerUrls.refund && <a href={task.arcEscrow.explorerUrls.refund} target="_blank" rel="noreferrer">Refund tx</a>}
+              </div>
+            )}
+          </article>
+          <article className="panel wideProof">
+            <p className="eyebrow">Deliverable proof</p>
+            <h2>{task.deliverable ? "Submitted before settlement" : "Not submitted yet"}</h2>
+            <p>{task.deliverable?.notes ?? "This escrow cannot be released until deliverable proof is attached in the owner console."}</p>
+            <div className="proofRows">
+              <ProofRow label="Proof URI" value={task.deliverable?.uri ?? "pending"} />
+              <ProofRow label="Submitted by" value={task.deliverable?.submittedBy ?? "pending"} />
+              <ProofRow
+                label="Submitted"
+                value={task.deliverable ? new Date(task.deliverable.submittedAt).toLocaleString() : "pending"}
+              />
+            </div>
+            {task.deliverable?.uri && (
+              <div className="linkStrip">
+                <a href={task.deliverable.uri} target="_blank" rel="noreferrer">Open deliverable proof</a>
               </div>
             )}
           </article>

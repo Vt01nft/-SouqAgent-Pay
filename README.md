@@ -64,6 +64,7 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - Product task ledger with Postgres support and local JSON fallback.
 - Shareable receipt pages at `/receipt/:taskId`.
 - Owner access code guard for agent spending, private task history, and escrow settlement actions.
+- Deliverable proof workflow: funded escrow jobs require saved proof before release.
 - Arc USDC escrow contract under `contracts/ArcJobEscrow.sol`.
 - Live Arc Testnet escrow creation and funding from the production API.
 - Contract compile script that emits `artifacts/ArcJobEscrow.json`.
@@ -91,6 +92,10 @@ The remaining Circle integration gap is replacing the current x402-compatible pa
 ## Owner Access
 
 Set `OWNER_ACCESS_CODE` in local and deployment environments. The frontend asks for this code before it can run agents, load the private task ledger, list escrow jobs, or release/refund funded escrow jobs. Public receipt URLs remain readable so they can be shared with judges or counterparties.
+
+## Escrow Release Flow
+
+SouqAgent Pay now follows a full trade workflow: owner instruction, agent-paid supplier risk check, Arc escrow funding, deliverable proof submission, and owner release. Deliverable proof is stored in the durable task ledger and displayed on the receipt page. The deployed contract includes `submitDeliverable`, but the current product stores proof offchain until Circle Wallet signing for the seller/agent wallet is wired into the app.
 
 ## Research Artifacts
 

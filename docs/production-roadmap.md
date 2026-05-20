@@ -20,9 +20,10 @@ SouqAgent Pay is now structured as a real product with demo mode as a fallback. 
    - Keep the current demo path as a fallback for judges.
 
 2. Expand Arc escrow.
-   - Index escrow events for receipt history.
-   - Add deliverable upload / proof-of-completion before release.
-   - Add role-aware controls so sellers cannot release their own jobs.
+   - Deliverable proof before release is now implemented in the product ledger.
+   - Receipt pages show delivery proof and release/refund transaction links.
+   - Next: use Circle Wallet signing to call the contract-level `submitDeliverable` as the seller/agent wallet.
+   - Index escrow events for richer receipt history.
 
 3. Enable durable production persistence.
    - Task, policy, receipt, and escrow records now flow through a storage adapter.

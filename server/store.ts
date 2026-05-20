@@ -13,9 +13,15 @@ export type ProductTask = {
   ownerRequest: string;
   maxAutonomousSpend: string;
   selectedService: string;
-  status: "funded" | "human-approval-required" | "failed";
+  status: "funded" | "delivered" | "released" | "refunded" | "human-approval-required" | "failed";
   payment?: unknown;
   result?: unknown;
+  deliverable?: {
+    uri: string;
+    notes: string;
+    submittedAt: string;
+    submittedBy: string;
+  };
   arcEscrow?: {
     jobId: string;
     amount: string;
@@ -24,6 +30,8 @@ export type ProductTask = {
     approveTxHash?: string;
     createTxHash?: string;
     fundTxHash?: string;
+    releaseTxHash?: string;
+    refundTxHash?: string;
     explorerUrls?: Record<string, string>;
   };
   receipts: unknown[];
@@ -199,4 +207,26 @@ export async function getTask(taskId: string) {
 
   const tasks = await readLocalTasks();
   return tasks.find((task) => task.taskId === taskId) ?? null;
+}
+
+// eslint-disable-next-line no-unused-vars
+export async function updateTask(taskId: string, updater: (task: ProductTask) => ProductTask) {
+  const task = await getTask(taskId);
+
+  if (!task) {
+    return null;
+  }
+
+  const updatedTask = updater({
+    ...task,
+    updatedAt: new Date().toISOString(),
+  });
+
+  await saveTask(updatedTask);
+  return updatedTask;
+}
+
+export async function findTaskByEscrowJobId(jobId: string) {
+  const tasks = await listTasks();
+  return tasks.find((task) => task.arcEscrow?.jobId === jobId) ?? null;
 }

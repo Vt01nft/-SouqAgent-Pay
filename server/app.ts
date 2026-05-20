@@ -9,7 +9,7 @@ import {
   receipts,
   type PaymentRequirement,
 } from "./commerce.js";
-import { getTask, listTasks, saveTask, type ProductTask } from "./store.js";
+import { findTaskByEscrowJobId, getTask, listTasks, saveTask, updateTask, type ProductTask } from "./store.js";
 
 export const app = express();
 
@@ -83,6 +83,43 @@ app.get("/api/tasks/:taskId", async (req, res, next) => {
   }
 });
 
+app.post("/api/tasks/:taskId/deliverable", requireOwnerAccess, async (req, res, next) => {
+  try {
+    const body = req.body as {
+      uri?: string;
+      notes?: string;
+      submittedBy?: string;
+    };
+    const uri = body.uri?.trim();
+    const notes = body.notes?.trim();
+
+    if (!uri || !notes) {
+      res.status(400).json({ error: "Deliverable URI and notes are required." });
+      return;
+    }
+
+    const task = await updateTask(String(req.params.taskId), (currentTask) => ({
+      ...currentTask,
+      status: currentTask.status === "funded" ? "delivered" : currentTask.status,
+      deliverable: {
+        uri,
+        notes,
+        submittedAt: new Date().toISOString(),
+        submittedBy: body.submittedBy?.trim() || "seller/operator",
+      },
+    }));
+
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    res.json({ task });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/escrow/status", async (_req, res, next) => {
   try {
     res.json(await getEscrowStatus());
@@ -101,7 +138,38 @@ app.get("/api/escrow/jobs", requireOwnerAccess, async (_req, res, next) => {
 
 app.post("/api/escrow/jobs/:jobId/release", requireOwnerAccess, async (req, res, next) => {
   try {
-    res.json(await releaseEscrowJob(String(req.params.jobId)));
+    const jobId = String(req.params.jobId);
+    const task = await findTaskByEscrowJobId(jobId);
+
+    if (!task?.deliverable) {
+      res.status(409).json({
+        error: "Delivery proof required",
+        detail: "Submit deliverable proof before releasing this escrow job.",
+      });
+      return;
+    }
+
+    const result = await releaseEscrowJob(jobId);
+
+    if (task) {
+      await updateTask(task.taskId, (currentTask) => ({
+        ...currentTask,
+        status: "released",
+        arcEscrow: currentTask.arcEscrow
+          ? {
+              ...currentTask.arcEscrow,
+              state: "released",
+              releaseTxHash: result.txHash,
+              explorerUrls: {
+                ...(currentTask.arcEscrow.explorerUrls ?? {}),
+                release: result.explorerUrl,
+              },
+            }
+          : currentTask.arcEscrow,
+      }));
+    }
+
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -109,7 +177,29 @@ app.post("/api/escrow/jobs/:jobId/release", requireOwnerAccess, async (req, res,
 
 app.post("/api/escrow/jobs/:jobId/refund", requireOwnerAccess, async (req, res, next) => {
   try {
-    res.json(await refundEscrowJob(String(req.params.jobId)));
+    const jobId = String(req.params.jobId);
+    const result = await refundEscrowJob(jobId);
+    const task = await findTaskByEscrowJobId(jobId);
+
+    if (task) {
+      await updateTask(task.taskId, (currentTask) => ({
+        ...currentTask,
+        status: "refunded",
+        arcEscrow: currentTask.arcEscrow
+          ? {
+              ...currentTask.arcEscrow,
+              state: "refunded",
+              refundTxHash: result.txHash,
+              explorerUrls: {
+                ...(currentTask.arcEscrow.explorerUrls ?? {}),
+                refund: result.explorerUrl,
+              },
+            }
+          : currentTask.arcEscrow,
+      }));
+    }
+
+    res.json(result);
   } catch (error) {
     next(error);
   }

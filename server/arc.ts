@@ -12,6 +12,7 @@ const usdcAbi = [
 const escrowAbi = [
   "function createJob(address seller, uint256 amount, string termsUri) returns (uint256)",
   "function fundJob(uint256 jobId)",
+  "function submitDeliverable(uint256 jobId, string deliverableUri)",
   "function release(uint256 jobId)",
   "function refund(uint256 jobId)",
   "function nextJobId() view returns (uint256)",
@@ -162,6 +163,20 @@ export async function refundEscrowJob(jobId: string) {
   return {
     jobId,
     state: "refunded",
+    txHash: tx.hash,
+    explorerUrl: getTxExplorerUrl(tx.hash),
+  };
+}
+
+export async function submitEscrowDeliverable(jobId: string, deliverableUri: string) {
+  const { provider, signer, escrow } = await getEscrowWriteClient();
+  const tx = await escrow.submitDeliverable(BigInt(jobId), deliverableUri, {
+    nonce: await provider.getTransactionCount(signer.address, "pending"),
+  });
+  await tx.wait();
+  return {
+    jobId,
+    state: "delivered",
     txHash: tx.hash,
     explorerUrl: getTxExplorerUrl(tx.hash),
   };
