@@ -34,9 +34,18 @@ Included:
 - frontend dashboard;
 - backend agent orchestrator;
 - x402-style seller API;
-- Arc USDC escrow contract;
+- Arc USDC escrow contract deployed on Arc Testnet;
 - architecture section in the app;
 - Circle Product Feedback documentation.
+
+## Live Testnet Evidence
+
+- Production app: `https://souqagent-pay.vercel.app`
+- Arc Testnet USDC: `0x3600000000000000000000000000000000000000`
+- ArcJobEscrow contract: `0x421707d931D0EF3b0fd4419085b91b713C622256`
+- Deployment transaction: `0xcc35de9fde88a79fb7dce33051cf233a830fe007a6e4338db8a7d6e4b350fe24`
+- Production-created funded job: `2`
+- Production fund transaction: `0xf281f5431a708facc99ed21a93b98d456d4d515be5ddf2e7f84e75a29044f631`
 
 ## Architecture
 

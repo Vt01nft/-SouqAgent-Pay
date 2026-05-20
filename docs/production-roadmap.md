@@ -8,7 +8,8 @@ SouqAgent Pay is now structured as a real product with demo mode as a fallback. 
 - Backend agent orchestrator.
 - Real local x402-style flow: seller returns `402`, agent evaluates policy, signs a payment header, retries, and receives paid data.
 - Product readiness endpoint: `GET /api/readiness`.
-- Arc escrow contract and compiled artifact.
+- Arc escrow contract deployed on Arc Testnet.
+- Live production API creates and funds Arc Testnet escrow jobs.
 - Submission documentation and brand assets.
 
 ## Next Engineering Milestones
@@ -23,11 +24,10 @@ SouqAgent Pay is now structured as a real product with demo mode as a fallback. 
    - Return real payment response headers and settlement receipts.
    - Keep the current demo path as a fallback for judges.
 
-3. Deploy Arc escrow.
-   - Set `ARC_RPC_URL=https://rpc.testnet.arc.network`.
-   - Use the Arc Testnet USDC address.
-   - Deploy `ArcJobEscrow.sol`.
-   - Save the deployed address in `ARC_JOB_ESCROW_ADDRESS`.
+3. Expand Arc escrow.
+   - Add job release and refund UI flows.
+   - Show historical onchain jobs in the app.
+   - Index escrow events for receipt history.
 
 4. Add persistence.
    - Store tasks, policy decisions, receipts, and escrow jobs.

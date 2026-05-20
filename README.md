@@ -56,8 +56,15 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - Express backend with deterministic agent execution flow.
 - x402-style paid API challenge and retry model.
 - Arc USDC escrow contract under `contracts/ArcJobEscrow.sol`.
+- Live Arc Testnet escrow creation and funding from the production API.
 - Contract compile script that emits `artifacts/ArcJobEscrow.json`.
 - Environment template for Circle and Arc credentials.
+
+## Live Testnet Contracts
+
+- Arc Testnet USDC: `0x3600000000000000000000000000000000000000`
+- ArcJobEscrow: `0x421707d931D0EF3b0fd4419085b91b713C622256`
+- Deployment tx: `0xcc35de9fde88a79fb7dce33051cf233a830fe007a6e4338db8a7d6e4b350fe24`
 
 ## Demo Mode vs Testnet Mode
 

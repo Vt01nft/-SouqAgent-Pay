@@ -725,7 +725,7 @@ h3 {
 
 .settlementStrip {
   display: grid;
-  grid-template-columns: 0.75fr 1fr 1.6fr;
+  grid-template-columns: 0.75fr 1fr 1fr 1.6fr;
   gap: 12px;
   margin-top: 12px;
 }
@@ -751,6 +751,30 @@ h3 {
   margin-top: 6px;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.linkStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.linkStrip a {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #090909;
+  border-radius: 999px;
+  color: #090909;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.linkStrip a:hover {
+  background: #ffd80d;
 }
 
 .architectureFlow {

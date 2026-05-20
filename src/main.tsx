@@ -79,6 +79,15 @@ type AgentRun = {
     amount: string;
     state: string;
     contract: string;
+    approveTxHash?: string;
+    createTxHash?: string;
+    fundTxHash?: string;
+    explorerUrls?: {
+      approve: string;
+      create: string;
+      fund: string;
+      contract: string;
+    };
   };
   receipts: Receipt[];
 };
@@ -99,6 +108,8 @@ type Readiness = {
     walletSetConfigured: boolean;
     ownerWalletConfigured: boolean;
     agentWalletConfigured: boolean;
+    ownerWalletAddress: string;
+    agentWalletAddress: string;
   };
 };
 
@@ -481,10 +492,22 @@ function App() {
                 <strong>{agentRun.arcEscrow.contract}</strong>
               </div>
               <div>
+                <span>Fund transaction</span>
+                <strong>{agentRun.arcEscrow.fundTxHash ?? "pending"}</strong>
+              </div>
+              <div>
                 <span>Recommendation</span>
                 <strong>{agentRun.result.recommendation}</strong>
               </div>
             </div>
+            {agentRun.arcEscrow.explorerUrls && (
+              <div className="linkStrip">
+                <a href={agentRun.arcEscrow.explorerUrls.contract} target="_blank" rel="noreferrer">Contract</a>
+                <a href={agentRun.arcEscrow.explorerUrls.approve} target="_blank" rel="noreferrer">Approve tx</a>
+                <a href={agentRun.arcEscrow.explorerUrls.create} target="_blank" rel="noreferrer">Create tx</a>
+                <a href={agentRun.arcEscrow.explorerUrls.fund} target="_blank" rel="noreferrer">Fund tx</a>
+              </div>
+            )}
           </section>
         )}
 

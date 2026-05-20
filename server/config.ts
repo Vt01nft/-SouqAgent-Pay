@@ -12,10 +12,13 @@ export type AppConfig = {
   arcExplorerUrl: string;
   arcUsdcAddress?: string;
   arcJobEscrowAddress?: string;
+  arcDeployerPrivateKey?: string;
   circleApiKey?: string;
   circleWalletSetId?: string;
   circleOwnerWalletId?: string;
   circleAgentWalletId?: string;
+  circleOwnerWalletAddress?: string;
+  circleAgentWalletAddress?: string;
 };
 
 function integrationMode(value: string | undefined): IntegrationMode {
@@ -36,10 +39,13 @@ export const config: AppConfig = {
   arcExplorerUrl: process.env.ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
   arcUsdcAddress: process.env.ARC_USDC_ADDRESS,
   arcJobEscrowAddress: process.env.ARC_JOB_ESCROW_ADDRESS,
+  arcDeployerPrivateKey: process.env.ARC_DEPLOYER_PRIVATE_KEY,
   circleApiKey: process.env.CIRCLE_API_KEY,
   circleWalletSetId: process.env.CIRCLE_WALLET_SET_ID,
   circleOwnerWalletId: process.env.CIRCLE_OWNER_WALLET_ID,
   circleAgentWalletId: process.env.CIRCLE_AGENT_WALLET_ID,
+  circleOwnerWalletAddress: process.env.CIRCLE_OWNER_WALLET_ADDRESS,
+  circleAgentWalletAddress: process.env.CIRCLE_AGENT_WALLET_ADDRESS,
 };
 
 export function getReadiness() {
@@ -74,6 +80,8 @@ export function getReadiness() {
       walletSetConfigured: Boolean(config.circleWalletSetId),
       ownerWalletConfigured: Boolean(config.circleOwnerWalletId),
       agentWalletConfigured: Boolean(config.circleAgentWalletId),
+      ownerWalletAddress: config.circleOwnerWalletAddress ?? "not-configured",
+      agentWalletAddress: config.circleAgentWalletAddress ?? "not-configured",
     },
   };
 }

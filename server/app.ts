@@ -1,5 +1,6 @@
 import express from "express";
 import { config, getReadiness } from "./config.js";
+import { createAndFundEscrowJob, getEscrowStatus } from "./arc.js";
 import {
   createDemoPaymentAuthorization,
   evaluatePolicy,
@@ -37,6 +38,14 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/readiness", (_req, res) => {
   res.json(getReadiness());
+});
+
+app.get("/api/escrow/status", async (_req, res, next) => {
+  try {
+    res.json(await getEscrowStatus());
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/api/demo/state", (_req, res) => {
@@ -140,6 +149,15 @@ app.post("/api/agent/run", async (_req, res, next) => {
       receiptId: string;
       resource: typeof paidResource;
     };
+    const sellerAddress =
+      config.circleAgentWalletAddress ??
+      config.circleOwnerAddress ??
+      "0xd72db4da2d6fd30c4c5e98754c06f570bab99fc3";
+    const escrowJob = await createAndFundEscrowJob({
+      seller: sellerAddress,
+      amountUsdc: "0.25",
+      termsUri: `souqagent://tasks/${taskId}`,
+    });
 
     res.json({
       taskId,
@@ -176,8 +194,8 @@ app.post("/api/agent/run", async (_req, res, next) => {
         },
         {
           id: "escrow",
-          title: "Arc escrow staged",
-          detail: "A 14.00 USDC job escrow is ready for milestone release after document review.",
+          title: "Arc escrow funded",
+          detail: `Job ${escrowJob.jobId} funded on Arc Testnet for ${escrowJob.amount}.`,
           status: "complete",
         },
       ],
@@ -190,10 +208,14 @@ app.post("/api/agent/run", async (_req, res, next) => {
       },
       result: paidData.resource,
       arcEscrow: {
-        jobId: "ARC-JOB-117",
-        amount: "14.00 USDC",
-        state: "funded",
-        contract: config.arcJobEscrowAddress ?? "contracts/ArcJobEscrow.sol",
+        jobId: escrowJob.jobId,
+        amount: escrowJob.amount,
+        state: escrowJob.state,
+        contract: escrowJob.contractAddress,
+        approveTxHash: escrowJob.approveTxHash,
+        createTxHash: escrowJob.createTxHash,
+        fundTxHash: escrowJob.fundTxHash,
+        explorerUrls: escrowJob.explorerUrls,
       },
       receipts,
     });
