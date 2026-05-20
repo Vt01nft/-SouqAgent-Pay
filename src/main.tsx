@@ -52,6 +52,8 @@ type TimelineEvent = {
 type AgentRun = {
   taskId: string;
   mode: string;
+  businessName: string;
+  ownerRequest: string;
   selectedService: string;
   steps: {
     id: string;
@@ -193,6 +195,12 @@ const timeline: TimelineEvent[] = [
 function App() {
   const [agentRun, setAgentRun] = React.useState<AgentRun | null>(null);
   const [readiness, setReadiness] = React.useState<Readiness | null>(null);
+  const [businessName, setBusinessName] = React.useState("VT01 Trading");
+  const [vendor, setVendor] = React.useState("Al Noor Components");
+  const [maxAutonomousSpend, setMaxAutonomousSpend] = React.useState("0.01");
+  const [ownerRequest, setOwnerRequest] = React.useState(
+    "Check Al Noor Components before releasing the next vendor milestone. Use a paid data source if the total cost is under my autonomous spend cap.",
+  );
   const [isRunning, setIsRunning] = React.useState(false);
 
   React.useEffect(() => {
@@ -202,15 +210,17 @@ function App() {
       .catch(() => setReadiness(null));
   }, []);
 
-  async function runDemoFlow() {
+  async function runAgentTask() {
     setIsRunning(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/agent/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          vendor: "Al Noor Components",
-          maxAutonomousSpend: "0.01 USDC",
+          businessName,
+          vendor,
+          ownerRequest,
+          maxAutonomousSpend,
         }),
       });
       const data = (await response.json()) as AgentRun;
@@ -265,8 +275,8 @@ function App() {
               verify suppliers, and prepare USDC settlement without handing the agent unlimited spend.
             </p>
           </div>
-          <button className="primaryButton" disabled={isRunning} onClick={runDemoFlow}>
-            {isRunning ? "Running..." : "Run demo flow"} <ArrowRight size={18} />
+          <button className="primaryButton" disabled={isRunning} onClick={runAgentTask}>
+            {isRunning ? "Running agent..." : "Run agent task"} <ArrowRight size={18} />
           </button>
         </header>
 
@@ -292,28 +302,46 @@ function App() {
           <div className="panel taskPanel">
             <div className="panelHeader">
               <div>
-                <p className="eyebrow">Active instruction</p>
-                <h2>Find a supplier-risk check and pay only if it is below budget.</h2>
+                <p className="eyebrow">Agent workspace</p>
+                <h2>Create a real business instruction with spending limits.</h2>
               </div>
               <Bot className="panelIcon" />
             </div>
-            <div className="promptBox">
-              <span>Owner request</span>
-              <p>
-                Check Al Noor Components before releasing the next vendor milestone.
-                Use a paid data source if the total cost is under 0.01 USDC.
-              </p>
+            <div className="taskForm">
+              <label>
+                Business name
+                <input value={businessName} onChange={(event) => setBusinessName(event.target.value)} />
+              </label>
+              <label>
+                Vendor or counterparty
+                <input value={vendor} onChange={(event) => setVendor(event.target.value)} />
+              </label>
+              <label>
+                Autonomous spend cap, USDC
+                <input
+                  inputMode="decimal"
+                  value={maxAutonomousSpend}
+                  onChange={(event) => setMaxAutonomousSpend(event.target.value)}
+                />
+              </label>
+              <label className="wideField">
+                Owner instruction
+                <textarea value={ownerRequest} onChange={(event) => setOwnerRequest(event.target.value)} />
+              </label>
+              <button className="secondaryButton" disabled={isRunning} onClick={runAgentTask}>
+                {isRunning ? "Executing..." : "Authorize agent within policy"}
+              </button>
             </div>
             <div className="metrics">
               <Metric icon={WalletCards} label="Gateway balance" value="25.00 USDC" />
-              <Metric icon={Gauge} label="Autonomous cap" value="0.01 USDC" />
+              <Metric icon={Gauge} label="Autonomous cap" value={`${maxAutonomousSpend || "0"} USDC`} />
               <Metric icon={Landmark} label="Escrow ready" value="14.00 USDC" />
             </div>
             {agentRun && (
               <div className="resultBox">
                 <div>
-                  <span>Agent result</span>
-                  <strong>{agentRun.selectedService} paid and delivered</strong>
+                  <span>{agentRun.businessName} result</span>
+                  <strong>{agentRun.selectedService} paid and delivered for {vendor}</strong>
                 </div>
                 <p>{agentRun.result.summary}</p>
                 <div className="resultChips">
@@ -331,9 +359,9 @@ function App() {
               <ShieldCheck className="panelIcon" />
             </div>
             <Policy label="Allowed categories" value="KYB, freight, settlement routing" />
-            <Policy label="Human approval" value="Required above 0.01 USDC" />
+            <Policy label="Human approval" value={`Required above ${maxAutonomousSpend || "0"} USDC`} />
             <Policy label="Settlement rail" value="Gateway nanopayments first, Arc escrow for jobs" />
-            <Policy label="Compliance mode" value="Testnet demo, no real funds" />
+            <Policy label="Current mode" value={readiness?.testnetReady ? "Circle/Arc testnet ready" : "Live app, pending Circle wallet IDs"} />
           </div>
         </section>
 

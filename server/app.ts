@@ -86,6 +86,12 @@ app.get("/api/demo/state", (_req, res) => {
 
 app.post("/api/agent/run", async (_req, res, next) => {
   try {
+    const body = _req.body as {
+      businessName?: string;
+      vendor?: string;
+      ownerRequest?: string;
+      maxAutonomousSpend?: string;
+    };
     const taskId = `TASK-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
     const protocol = _req.header("x-forwarded-proto") ?? _req.protocol;
     const host = _req.header("host");
@@ -105,7 +111,8 @@ app.post("/api/agent/run", async (_req, res, next) => {
       accepts: PaymentRequirement[];
     };
     const requirement = challenge.accepts[0];
-    const policy = evaluatePolicy(requirement.amount);
+    const maxAutonomousSpend = Number.parseFloat(body.maxAutonomousSpend ?? "0.01");
+    const policy = evaluatePolicy(requirement.amount, Number.isFinite(maxAutonomousSpend) ? maxAutonomousSpend : 0.01);
 
     if (!policy.approved) {
       res.status(402).json({
@@ -137,6 +144,10 @@ app.post("/api/agent/run", async (_req, res, next) => {
     res.json({
       taskId,
       mode: config.integrationMode,
+      businessName: body.businessName ?? "VT01 Trading",
+      ownerRequest:
+        body.ownerRequest ??
+        "Check Al Noor Components before releasing the next vendor milestone.",
       selectedService: "Gulf KYB Pulse",
       steps: [
         {
