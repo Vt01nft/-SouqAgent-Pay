@@ -87,7 +87,10 @@ app.get("/api/demo/state", (_req, res) => {
 app.post("/api/agent/run", async (_req, res, next) => {
   try {
     const taskId = `TASK-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
-    const sellerUrl = `${config.publicBaseUrl}/api/seller/supplier-risk`;
+    const protocol = _req.header("x-forwarded-proto") ?? _req.protocol;
+    const host = _req.header("host");
+    const requestBaseUrl = host ? `${protocol}://${host}` : config.publicBaseUrl;
+    const sellerUrl = `${requestBaseUrl}/api/seller/supplier-risk`;
 
     const initialResponse = await fetch(sellerUrl, {
       headers: { "X-Agent-Intent": "supplier-risk-check" },
