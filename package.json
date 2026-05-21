@@ -12,6 +12,7 @@
     "server": "tsx server/index.ts"
   },
   "dependencies": {
+    "@circle-fin/developer-controlled-wallets": "^10.3.1",
     "@types/pg": "^8.20.0",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",

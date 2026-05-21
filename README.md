@@ -75,6 +75,9 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - Arc Testnet USDC: `0x3600000000000000000000000000000000000000`
 - ArcJobEscrow: `0x421707d931D0EF3b0fd4419085b91b713C622256`
 - Deployment tx: `0xcc35de9fde88a79fb7dce33051cf233a830fe007a6e4338db8a7d6e4b350fe24`
+- Full flow receipt: `https://souqagent-pay.vercel.app/receipt/TASK-20260520191149`
+- Circle Wallet deliverable tx: `0xe0d214c51edadc4f9bec75b695e08a8d3450eb2d55a1f087b2ccbc84e5e4086b`
+- Escrow release tx: `0xd9ebed3aae17514b3957d51c3094fdf83f0136eb19ac3627f8b4f95f28ada4fd`
 
 ## Demo Mode vs Testnet Mode
 
@@ -95,7 +98,7 @@ Set `OWNER_ACCESS_CODE` in local and deployment environments. The frontend asks 
 
 ## Escrow Release Flow
 
-SouqAgent Pay now follows a full trade workflow: owner instruction, agent-paid supplier risk check, Arc escrow funding, deliverable proof submission, and owner release. Deliverable proof is stored in the durable task ledger and displayed on the receipt page. The deployed contract includes `submitDeliverable`, but the current product stores proof offchain until Circle Wallet signing for the seller/agent wallet is wired into the app.
+SouqAgent Pay now follows a full trade workflow: owner instruction, agent-paid supplier risk check, Arc escrow funding, deliverable proof submission, and owner release. Deliverable proof is stored in the durable task ledger and displayed on the receipt page. The backend also attempts a Circle Wallet contract execution from the agent wallet to call `submitDeliverable(uint256,string)` on the Arc escrow contract; the receipt records the Circle transaction id/hash or the fallback error if Circle testnet execution is unavailable.
 
 ## Research Artifacts
 

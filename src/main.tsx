@@ -109,6 +109,7 @@ type Readiness = {
   };
   circle: {
     apiKeyConfigured: boolean;
+    entitySecretConfigured: boolean;
     walletSetConfigured: boolean;
     ownerWalletConfigured: boolean;
     agentWalletConfigured: boolean;
@@ -149,6 +150,11 @@ type ProductTask = {
     notes: string;
     submittedAt: string;
     submittedBy: string;
+    onchainStatus?: "submitted" | "failed" | "skipped";
+    onchainTransactionId?: string;
+    onchainTxHash?: string;
+    onchainExplorerUrl?: string;
+    onchainError?: string;
   };
   arcEscrow?: AgentRun["arcEscrow"];
   receipts: Receipt[];
@@ -385,12 +391,17 @@ function App() {
         setAccessMessage("Could not save deliverable proof.");
         return;
       }
+      const data = (await response.json()) as { task: ProductTask };
 
       setDeliverableInputs((current) => ({
         ...current,
         [taskId]: { uri: "", notes: "" },
       }));
-      setAccessMessage("Deliverable proof saved. Escrow can now be released.");
+      setAccessMessage(
+        data.task.deliverable?.onchainStatus === "submitted"
+          ? "Deliverable proof saved and Circle Wallet onchain submit started."
+          : "Deliverable proof saved. Escrow can now be released.",
+      );
       await refreshProductTasks();
       await refreshEscrowJobs();
     } finally {
@@ -593,7 +604,7 @@ function App() {
               <ReadinessCard
                 label="Circle Wallets"
                 value={readiness.circle.agentWalletConfigured ? "configured" : "missing wallet IDs"}
-                status={readiness.circle.agentWalletConfigured ? "online" : "needed"}
+                status={readiness.circle.agentWalletConfigured && readiness.circle.entitySecretConfigured ? "online" : "needed"}
               />
               <ReadinessCard
                 label="Agent wallet"
@@ -824,6 +835,7 @@ function App() {
                         {task.deliverable && (
                           <p>
                             {task.deliverable.notes} <a href={task.deliverable.uri} target="_blank" rel="noreferrer">Open proof</a>
+                            {task.deliverable.onchainStatus && ` Onchain: ${task.deliverable.onchainStatus}.`}
                           </p>
                         )}
                       </div>
@@ -977,10 +989,17 @@ function ReceiptPage({ task, taskId }: { task: ProductTask | null; taskId: strin
                 label="Submitted"
                 value={task.deliverable ? new Date(task.deliverable.submittedAt).toLocaleString() : "pending"}
               />
+              <ProofRow label="Circle Wallet onchain status" value={task.deliverable?.onchainStatus ?? "pending"} />
+              <ProofRow label="Circle transaction id" value={task.deliverable?.onchainTransactionId ?? "pending"} />
+              <ProofRow label="Onchain deliverable tx" value={task.deliverable?.onchainTxHash ?? "pending"} />
+              <ProofRow label="Onchain submit note" value={task.deliverable?.onchainError ?? "none"} />
             </div>
             {task.deliverable?.uri && (
               <div className="linkStrip">
                 <a href={task.deliverable.uri} target="_blank" rel="noreferrer">Open deliverable proof</a>
+                {task.deliverable.onchainExplorerUrl && (
+                  <a href={task.deliverable.onchainExplorerUrl} target="_blank" rel="noreferrer">Onchain proof tx</a>
+                )}
               </div>
             )}
           </article>

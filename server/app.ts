@@ -9,6 +9,7 @@ import {
   receipts,
   type PaymentRequirement,
 } from "./commerce.js";
+import { canUseCircleContractExecution, submitDeliverableWithCircleWallet, waitForCircleTransactionHash } from "./circleWallets.js";
 import { findTaskByEscrowJobId, getTask, listTasks, saveTask, updateTask, type ProductTask } from "./store.js";
 
 export const app = express();
@@ -98,23 +99,93 @@ app.post("/api/tasks/:taskId/deliverable", requireOwnerAccess, async (req, res, 
       return;
     }
 
-    const task = await updateTask(String(req.params.taskId), (currentTask) => ({
-      ...currentTask,
-      status: currentTask.status === "funded" ? "delivered" : currentTask.status,
-      deliverable: {
-        uri,
-        notes,
-        submittedAt: new Date().toISOString(),
-        submittedBy: body.submittedBy?.trim() || "seller/operator",
-      },
-    }));
+    const currentTask = await getTask(String(req.params.taskId));
 
-    if (!task) {
+    if (!currentTask) {
       res.status(404).json({ error: "Task not found" });
       return;
     }
 
+    let onchainDeliverable:
+      | NonNullable<ProductTask["deliverable"]>
+      | undefined;
+
+    onchainDeliverable = {
+      uri,
+      notes,
+      submittedAt: new Date().toISOString(),
+      submittedBy: body.submittedBy?.trim() || "seller/operator",
+      onchainStatus: "skipped",
+    };
+
+    if (currentTask.arcEscrow?.jobId && canUseCircleContractExecution()) {
+      try {
+        const circleResult = await submitDeliverableWithCircleWallet({
+          jobId: currentTask.arcEscrow.jobId,
+          deliverableUri: uri,
+        });
+        const settledResult = circleResult.transactionId
+          ? await waitForCircleTransactionHash({ transactionId: circleResult.transactionId })
+          : circleResult;
+        onchainDeliverable = {
+          ...onchainDeliverable,
+          onchainStatus: "submitted",
+          onchainTransactionId: settledResult?.transactionId ?? circleResult.transactionId,
+          onchainTxHash: settledResult?.txHash ?? circleResult.txHash,
+          onchainExplorerUrl: (settledResult?.txHash ?? circleResult.txHash)
+            ? `${config.arcExplorerUrl}/tx/${settledResult?.txHash ?? circleResult.txHash}`
+            : undefined,
+        };
+      } catch (error) {
+        onchainDeliverable = {
+          ...onchainDeliverable,
+          onchainStatus: "failed",
+          onchainError: error instanceof Error ? error.message : "Circle Wallet contract execution failed.",
+        };
+      }
+    }
+
+    const task = await updateTask(currentTask.taskId, (taskToUpdate) => ({
+      ...taskToUpdate,
+      status: taskToUpdate.status === "funded" ? "delivered" : taskToUpdate.status,
+      deliverable: onchainDeliverable,
+    }));
+
     res.json({ task });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/tasks/:taskId/sync-deliverable", requireOwnerAccess, async (req, res, next) => {
+  try {
+    const task = await getTask(String(req.params.taskId));
+
+    if (!task?.deliverable?.onchainTransactionId) {
+      res.status(404).json({ error: "No Circle deliverable transaction to sync." });
+      return;
+    }
+
+    const circleResult = await waitForCircleTransactionHash({
+      transactionId: task.deliverable.onchainTransactionId,
+      attempts: 3,
+      intervalMs: 1000,
+    });
+
+    const updatedTask = await updateTask(task.taskId, (currentTask) => ({
+      ...currentTask,
+      deliverable: currentTask.deliverable
+        ? {
+            ...currentTask.deliverable,
+            onchainTxHash: circleResult?.txHash ?? currentTask.deliverable.onchainTxHash,
+            onchainExplorerUrl: circleResult?.txHash
+              ? `${config.arcExplorerUrl}/tx/${circleResult.txHash}`
+              : currentTask.deliverable.onchainExplorerUrl,
+          }
+        : currentTask.deliverable,
+    }));
+
+    res.json({ task: updatedTask });
   } catch (error) {
     next(error);
   }

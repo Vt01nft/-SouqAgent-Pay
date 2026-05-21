@@ -14,6 +14,7 @@ export type AppConfig = {
   arcJobEscrowAddress?: string;
   arcDeployerPrivateKey?: string;
   circleApiKey?: string;
+  circleEntitySecret?: string;
   circleWalletSetId?: string;
   circleOwnerWalletId?: string;
   circleAgentWalletId?: string;
@@ -45,6 +46,7 @@ export const config: AppConfig = {
   arcJobEscrowAddress: process.env.ARC_JOB_ESCROW_ADDRESS,
   arcDeployerPrivateKey: process.env.ARC_DEPLOYER_PRIVATE_KEY,
   circleApiKey: process.env.CIRCLE_API_KEY,
+  circleEntitySecret: process.env.CIRCLE_ENTITY_SECRET,
   circleWalletSetId: process.env.CIRCLE_WALLET_SET_ID,
   circleOwnerWalletId: process.env.CIRCLE_OWNER_WALLET_ID,
   circleAgentWalletId: process.env.CIRCLE_AGENT_WALLET_ID,
@@ -88,6 +90,7 @@ export function getReadiness() {
       developerEmail: config.circleDeveloperEmail ?? "not-configured",
       ownerAddress: config.circleOwnerAddress ?? "not-configured",
       apiKeyConfigured: Boolean(config.circleApiKey),
+      entitySecretConfigured: Boolean(config.circleEntitySecret),
       walletSetConfigured: Boolean(config.circleWalletSetId),
       ownerWalletConfigured: Boolean(config.circleOwnerWalletId),
       agentWalletConfigured: Boolean(config.circleAgentWalletId),

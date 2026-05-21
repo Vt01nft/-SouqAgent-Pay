@@ -21,6 +21,11 @@ export type ProductTask = {
     notes: string;
     submittedAt: string;
     submittedBy: string;
+    onchainStatus?: "submitted" | "failed" | "skipped";
+    onchainTransactionId?: string;
+    onchainTxHash?: string;
+    onchainExplorerUrl?: string;
+    onchainError?: string;
   };
   arcEscrow?: {
     jobId: string;
