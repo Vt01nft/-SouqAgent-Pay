@@ -74,6 +74,12 @@ SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verif
 
 ## Architecture Diagram
 
+Architecture image file included with this submission:
+C:\Hackathon\souqagent-pay\docs\architecture-souqagent-pay.png
+
+GitHub repository path:
+docs/architecture-souqagent-pay.png
+
                              SOUQAGENT PAY ARCHITECTURE
 
 +----------------+       +----------------------+       +----------------------+

@@ -25,6 +25,13 @@ function inlineMarkdown(value) {
   escaped = escaped.replace(/`([^`]+)`/g, "<code>$1</code>");
   escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   escaped = escaped.replace(
+    /!\[([^\]]*)\]\(([^)]+)\)/g,
+    (_match, alt, src) => {
+      const imagePath = path.resolve(path.dirname(inputPath), src);
+      return `<figure><img src="${pathToFileURL(imagePath).href}" alt="${escapeHtml(alt)}" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+    },
+  );
+  escaped = escaped.replace(
     /(https?:\/\/[^\s<]+)/g,
     '<a href="$1">$1</a>',
   );
@@ -196,6 +203,25 @@ const html = `<!doctype html>
         font-size: 10px;
       }
       a { color: #111111; text-decoration: underline; overflow-wrap: anywhere; }
+      figure {
+        margin: 8px 0 14px;
+        padding: 10px;
+        border: 1px solid #d7d7d0;
+        border-radius: 8px;
+        background: #fbfbfa;
+        break-inside: avoid;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      figcaption {
+        margin-top: 6px;
+        color: #55554f;
+        font-size: 10px;
+        text-align: center;
+      }
       .diagram {
         display: grid;
         gap: 7px;

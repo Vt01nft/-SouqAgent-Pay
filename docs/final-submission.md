@@ -74,25 +74,7 @@ SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verif
 
 ## Architecture Diagram
 
-```mermaid
-flowchart LR
-  Owner["SME Owner"] --> UI["SouqAgent Pay UI"]
-  UI --> Access["Owner Access Guard"]
-  Access --> API["Agent Orchestrator API"]
-  API --> Policy["Budget Policy Engine"]
-  API --> Seller["x402 Seller API"]
-  Seller --> PaidData["Supplier Risk Result"]
-  PaidData --> API
-  API --> Gateway["Circle Gateway / Nanopayments Model"]
-  API --> Wallets["Circle Wallets"]
-  Wallets --> Deliverable["submitDeliverable(uint256,string)"]
-  Deliverable --> Arc["Arc Testnet"]
-  API --> Arc
-  Arc --> Escrow["ArcJobEscrow.sol"]
-  API --> Ledger["Supabase Task Ledger"]
-  Ledger --> Receipt["Shareable Receipt Page"]
-  Receipt --> Owner
-```
+![SouqAgent Pay architecture diagram](./architecture-souqagent-pay.png)
 
 ## Circle Product Feedback
 
