@@ -49,6 +49,40 @@ export type EscrowJob = {
   explorerUrl: string;
 };
 
+export type ProductionStatus = {
+  network: {
+    rpcUrl: string;
+    explorerUrl: string;
+    usdcAddress: string;
+    escrowAddress: string;
+  };
+  balances: {
+    deployer: {
+      address: string;
+      usdc: string;
+      explorerUrl: string;
+    } | null;
+    escrow: {
+      address: string;
+      usdc: string;
+      explorerUrl: string;
+    } | null;
+    agent: {
+      address: string;
+      usdc: string;
+      walletId: string;
+      explorerUrl: string;
+    } | null;
+    owner: {
+      address: string;
+      usdc: string;
+      walletId: string;
+      explorerUrl: string;
+    } | null;
+  };
+  latestJob: EscrowJob | null;
+};
+
 const jobStates = ["created", "funded", "delivered", "released", "refunded"];
 
 export function getArcProvider() {
@@ -103,6 +137,83 @@ function formatUsdc(baseUnits: bigint, decimals: number) {
   const whole = baseUnits / scale;
   const fraction = (baseUnits % scale).toString().padStart(decimals, "0").replace(/0+$/, "");
   return `${whole.toString()}${fraction ? `.${fraction}` : ""} USDC`;
+}
+
+async function getUsdcBalance(usdc: Contract, address?: string | null, decimals?: number) {
+  if (!address || !decimals) {
+    return "not-configured";
+  }
+
+  const balance = await usdc.balanceOf(address);
+  return formatUsdc(BigInt(balance.toString()), decimals);
+}
+
+export async function getProductionStatus(): Promise<ProductionStatus> {
+  if (!config.arcUsdcAddress || !config.arcJobEscrowAddress) {
+    return {
+      network: {
+        rpcUrl: config.arcRpcUrl,
+        explorerUrl: config.arcExplorerUrl,
+        usdcAddress: config.arcUsdcAddress ?? "not-configured",
+        escrowAddress: config.arcJobEscrowAddress ?? "not-configured",
+      },
+      balances: {
+        deployer: null,
+        escrow: null,
+        agent: null,
+        owner: null,
+      },
+      latestJob: null,
+    };
+  }
+
+  const provider = getArcProvider();
+  const usdc = new Contract(config.arcUsdcAddress, usdcAbi, provider);
+  const decimals = Number(await usdc.decimals());
+  const deployerAddress = config.arcDeployerPrivateKey
+    ? new Wallet(config.arcDeployerPrivateKey).address
+    : null;
+  const jobs = await listEscrowJobs();
+
+  return {
+    network: {
+      rpcUrl: config.arcRpcUrl,
+      explorerUrl: config.arcExplorerUrl,
+      usdcAddress: config.arcUsdcAddress,
+      escrowAddress: config.arcJobEscrowAddress,
+    },
+    balances: {
+      deployer: deployerAddress
+        ? {
+            address: deployerAddress,
+            usdc: await getUsdcBalance(usdc, deployerAddress, decimals),
+            explorerUrl: getEscrowExplorerUrl(deployerAddress),
+          }
+        : null,
+      escrow: {
+        address: config.arcJobEscrowAddress,
+        usdc: await getUsdcBalance(usdc, config.arcJobEscrowAddress, decimals),
+        explorerUrl: getEscrowExplorerUrl(config.arcJobEscrowAddress),
+      },
+      agent: config.circleAgentWalletAddress
+        ? {
+            address: config.circleAgentWalletAddress,
+            usdc: await getUsdcBalance(usdc, config.circleAgentWalletAddress, decimals),
+            walletId: config.circleAgentWalletId ?? "not-configured",
+            explorerUrl: getEscrowExplorerUrl(config.circleAgentWalletAddress),
+          }
+        : null,
+      owner: config.circleOwnerWalletAddress
+        ? {
+            address: config.circleOwnerWalletAddress,
+            usdc: await getUsdcBalance(usdc, config.circleOwnerWalletAddress, decimals),
+            walletId: config.circleOwnerWalletId ?? "not-configured",
+            explorerUrl: getEscrowExplorerUrl(config.circleOwnerWalletAddress),
+          }
+        : null,
+    },
+    latestJob: jobs[0] ?? null,
+  };
 }
 
 export async function listEscrowJobs(): Promise<EscrowJob[]> {

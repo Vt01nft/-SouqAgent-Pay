@@ -5,6 +5,7 @@
 - [ ] Open `https://souqagent-pay.vercel.app`.
 - [ ] Confirm page loads without visible errors.
 - [ ] Confirm readiness shows testnet mode, Arc contract, Circle Wallets, Supabase, and owner controls.
+- [ ] Confirm production status shows deployer/escrow USDC balance, agent wallet, contract address, latest job, and readiness.
 - [ ] Enter owner access code.
 - [ ] Confirm task ledger loads.
 - [ ] Confirm escrow history loads.
@@ -23,6 +24,7 @@
 - [ ] Anonymous `GET /api/tasks` returns `401`.
 - [ ] Owner-code `GET /api/tasks` returns saved tasks.
 - [ ] Public `GET /api/tasks/TASK-20260520191149` returns the receipt data.
+- [ ] Public `GET /api/production/status` returns live balances and latest Arc job.
 
 ## Repository
 

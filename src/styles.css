@@ -676,6 +676,43 @@ h3 {
   gap: 12px;
 }
 
+.productionGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statusItem {
+  min-height: 142px;
+  padding: 16px;
+  border: 1px solid #e2e2db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #090909;
+  text-decoration: none;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+}
+
+.statusItem:hover {
+  border-color: #c9ba4a;
+  background: #fff9d8;
+}
+
+.statusItem span,
+.statusItem b {
+  color: #686862;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.statusItem strong,
+.statusItem b {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
 .readinessGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1086,6 +1123,7 @@ h3 {
   .lowerGrid,
   .serviceGrid,
   .userJourneyGrid,
+  .productionGrid,
   .readinessGrid,
   .runGrid,
   .settlementStrip,

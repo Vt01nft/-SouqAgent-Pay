@@ -45,6 +45,7 @@ Open the web app at `http://localhost:5173`.
 API endpoints:
 
 - `GET /api/health`
+- `GET /api/production/status`
 - `GET /api/demo/state`
 - `POST /api/agent/run`
 - `GET /api/seller/supplier-risk`
@@ -64,6 +65,7 @@ The seller endpoint intentionally returns `402 Payment Required` until a `paymen
 - Product task ledger with Postgres support and local JSON fallback.
 - Shareable receipt pages at `/receipt/:taskId`.
 - Owner access code guard for agent spending, private task history, and escrow settlement actions.
+- Production status panel with deployer, escrow, owner wallet, agent wallet balances, contract address, latest job, and readiness.
 - Deliverable proof workflow: funded escrow jobs require saved proof before release.
 - Arc USDC escrow contract under `contracts/ArcJobEscrow.sol`.
 - Live Arc Testnet escrow creation and funding from the production API.

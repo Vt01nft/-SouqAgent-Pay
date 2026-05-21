@@ -17,6 +17,7 @@ Show the live dashboard:
 - Escrow ready: 14 USDC
 - Active instruction for supplier-risk check
 - Owner access panel protecting spend and settlement controls
+- Production status panel with live Arc balances and latest job
 
 ## 0:35 - 1:10
 
@@ -37,6 +38,7 @@ Show the task ledger and receipt:
 - task ID;
 - x402 authorization;
 - Arc escrow contract path and fund tx;
+- production balance/status panel;
 - supplier-risk recommendation.
 - deliverable proof section;
 - Circle Wallet onchain deliverable tx;

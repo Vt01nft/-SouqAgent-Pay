@@ -41,6 +41,7 @@ SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verif
 - Circle Wallets submit deliverable proof to the Arc contract from the agent/seller wallet.
 - Supabase stores durable task, policy, deliverable, and receipt records.
 - Owner access protects spend and settlement controls.
+- The production status panel shows live deployer, escrow, owner wallet, and agent wallet balances plus the latest Arc job.
 - Receipt pages are public and shareable for audit/review.
 
 ## Live Testnet Evidence
@@ -66,6 +67,7 @@ SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verif
 - Real Arc escrow funding
 - Deliverable proof before release
 - Circle Wallet onchain deliverable submission
+- Production balance/status panel
 - Supabase task ledger
 - Shareable receipt pages
 - Circle Product Feedback section
@@ -120,7 +122,7 @@ SouqAgent Pay needs programmable stablecoin money that agents can use without ex
 ## Demo Video Flow
 
 1. Open https://souqagent-pay.vercel.app.
-2. Show owner access, readiness, Arc contract, Circle wallet configuration.
+2. Show owner access, readiness, Arc contract, Circle wallet configuration, and production balance/status panel.
 3. Explain the owner instruction and spend cap.
 4. Show the agent flow: x402 payment challenge, policy check, payment authorization, supplier risk result.
 5. Show the task ledger and full-flow receipt.

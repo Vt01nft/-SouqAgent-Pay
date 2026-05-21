@@ -121,6 +121,31 @@ type Readiness = {
   };
 };
 
+type ProductionStatus = {
+  readiness: Readiness;
+  status: {
+    network: {
+      rpcUrl: string;
+      explorerUrl: string;
+      usdcAddress: string;
+      escrowAddress: string;
+    };
+    balances: {
+      deployer: StatusBalance | null;
+      escrow: StatusBalance | null;
+      agent: (StatusBalance & { walletId: string }) | null;
+      owner: (StatusBalance & { walletId: string }) | null;
+    };
+    latestJob: EscrowJob | null;
+  };
+};
+
+type StatusBalance = {
+  address: string;
+  usdc: string;
+  explorerUrl: string;
+};
+
 type EscrowJob = {
   jobId: string;
   buyer: string;
@@ -263,6 +288,7 @@ function App() {
     : null;
   const [agentRun, setAgentRun] = React.useState<AgentRun | null>(null);
   const [readiness, setReadiness] = React.useState<Readiness | null>(null);
+  const [productionStatus, setProductionStatus] = React.useState<ProductionStatus | null>(null);
   const [escrowJobs, setEscrowJobs] = React.useState<EscrowJob[]>([]);
   const [productTasks, setProductTasks] = React.useState<ProductTask[]>([]);
   const [receiptTask, setReceiptTask] = React.useState<ProductTask | null>(null);
@@ -323,6 +349,10 @@ function App() {
       .then((response) => response.json())
       .then((data: Readiness) => setReadiness(data))
       .catch(() => setReadiness(null));
+    fetch(`${API_BASE_URL}/api/production/status`)
+      .then((response) => response.json())
+      .then((data: ProductionStatus) => setProductionStatus(data))
+      .catch(() => setProductionStatus(null));
     if (ownerAccessCode) {
       void Promise.resolve().then(async () => {
         await refreshEscrowJobs();
@@ -625,6 +655,63 @@ function App() {
             {!readiness.testnetReady && (
               <p className="missingText">Needed for testnet: {readiness.missing.join(", ")}</p>
             )}
+          </section>
+        )}
+
+        {productionStatus && (
+          <section className="panel productionPanel">
+            <div className="panelHeader">
+              <div>
+                <p className="eyebrow">Production status</p>
+                <h2>Live Arc balances, wallets, and latest job readiness</h2>
+              </div>
+              <Gauge className="panelIcon" />
+            </div>
+            <div className="productionGrid">
+              <StatusItem
+                label="Deployer USDC"
+                value={productionStatus.status.balances.deployer?.usdc ?? "not-configured"}
+                meta={productionStatus.status.balances.deployer?.address ?? "ARC_DEPLOYER_PRIVATE_KEY missing"}
+                href={productionStatus.status.balances.deployer?.explorerUrl}
+              />
+              <StatusItem
+                label="Escrow USDC"
+                value={productionStatus.status.balances.escrow?.usdc ?? "not-configured"}
+                meta={productionStatus.status.network.escrowAddress}
+                href={productionStatus.status.balances.escrow?.explorerUrl}
+              />
+              <StatusItem
+                label="Agent wallet"
+                value={productionStatus.status.balances.agent?.usdc ?? "not-configured"}
+                meta={productionStatus.status.balances.agent?.address ?? "CIRCLE_AGENT_WALLET_ADDRESS missing"}
+                href={productionStatus.status.balances.agent?.explorerUrl}
+              />
+              <StatusItem
+                label="Owner wallet"
+                value={productionStatus.status.balances.owner?.usdc ?? "not-configured"}
+                meta={productionStatus.status.balances.owner?.address ?? "CIRCLE_OWNER_WALLET_ADDRESS missing"}
+                href={productionStatus.status.balances.owner?.explorerUrl}
+              />
+              <StatusItem
+                label="Latest job"
+                value={
+                  productionStatus.status.latestJob
+                    ? `Job ${productionStatus.status.latestJob.jobId} ${productionStatus.status.latestJob.state}`
+                    : "none"
+                }
+                meta={productionStatus.status.latestJob?.amount ?? "Run an agent task to create escrow"}
+                href={productionStatus.status.latestJob?.explorerUrl}
+              />
+              <StatusItem
+                label="Readiness"
+                value={productionStatus.readiness.testnetReady ? "testnet ready" : "needs setup"}
+                meta={
+                  productionStatus.readiness.security.ownerAccessConfigured
+                    ? "owner controls protected"
+                    : "owner access code missing"
+                }
+              />
+            </div>
           </section>
         )}
 
@@ -1074,6 +1161,26 @@ function ReadinessCard({ label, value, status }: { label: string; value: string;
       <b className={`statusPill ${status}`}>{status}</b>
     </article>
   );
+}
+
+function StatusItem({ label, value, meta, href }: { label: string; value: string; meta: string; href?: string }) {
+  const content = (
+    <>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <b>{meta}</b>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a className="statusItem" href={href} target="_blank" rel="noreferrer">
+        {content}
+      </a>
+    );
+  }
+
+  return <article className="statusItem">{content}</article>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
