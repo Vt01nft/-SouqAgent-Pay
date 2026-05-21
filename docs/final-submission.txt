@@ -74,25 +74,64 @@ SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verif
 
 ## Architecture Diagram
 
-```mermaid
-flowchart LR
-  Owner["SME Owner"] --> UI["SouqAgent Pay UI"]
-  UI --> Access["Owner Access Guard"]
-  Access --> API["Agent Orchestrator API"]
-  API --> Policy["Budget Policy Engine"]
-  API --> Seller["x402 Seller API"]
-  Seller --> PaidData["Supplier Risk Result"]
-  PaidData --> API
-  API --> Gateway["Circle Gateway / Nanopayments Model"]
-  API --> Wallets["Circle Wallets"]
-  Wallets --> Deliverable["submitDeliverable(uint256,string)"]
-  Deliverable --> Arc["Arc Testnet"]
-  API --> Arc
-  Arc --> Escrow["ArcJobEscrow.sol"]
-  API --> Ledger["Supabase Task Ledger"]
-  Ledger --> Receipt["Shareable Receipt Page"]
-  Receipt --> Owner
-```
+                             SOUQAGENT PAY ARCHITECTURE
+
++----------------+       +----------------------+       +----------------------+
+| SME Owner      | ----> | SouqAgent Pay UI     | ----> | Owner Access Guard   |
++----------------+       +----------------------+       +----------------------+
+                                                              |
+                                                              v
+                         +--------------------------------------------+
+                         | Agent Orchestrator API                     |
+                         | - receives owner instruction               |
+                         | - enforces spend policy                    |
+                         | - coordinates paid API + escrow workflow   |
+                         +--------------------------------------------+
+                              |                    |                 |
+                              v                    v                 v
+              +-----------------------+   +----------------+   +----------------------+
+              | Budget Policy Engine  |   | x402 Seller API|   | Circle Gateway /     |
+              | spend cap + approval  |   | supplier risk  |   | Nanopayments model   |
+              +-----------------------+   +----------------+   +----------------------+
+                                                   |
+                                                   v
+                                      +-------------------------+
+                                      | Supplier Risk Result    |
+                                      | paid data + receipt     |
+                                      +-------------------------+
+                                                   |
+                                                   v
+                         +--------------------------------------------+
+                         | Agent Orchestrator API                     |
+                         | stores task, payment, policy, and result   |
+                         +--------------------------------------------+
+                              |                    |                 |
+                              v                    v                 v
+              +-----------------------+   +----------------+   +----------------------+
+              | Circle Wallets        |   | Arc Testnet    |   | Supabase Task Ledger |
+              | agent/seller signing  |   | USDC escrow    |   | durable receipts     |
+              +-----------------------+   +----------------+   +----------------------+
+                         |                       |                         |
+                         v                       v                         v
+        +--------------------------------+  +-------------------+  +----------------------+
+        | submitDeliverable(uint256,     |  | ArcJobEscrow.sol  |  | Shareable Receipt    |
+        | string) contract execution     |  | fund/release/refund|  | Page                 |
+        +--------------------------------+  +-------------------+  +----------------------+
+                                                                             |
+                                                                             v
+                                                                      +--------------+
+                                                                      | SME Owner    |
+                                                                      +--------------+
+
+Core flow:
+1. Owner enters an instruction and spend cap in the SouqAgent Pay UI.
+2. The backend checks owner access and applies the budget policy.
+3. The agent calls a paid seller API and handles the x402-style payment challenge.
+4. The result is attached to the task ledger with payment receipt evidence.
+5. The backend funds an Arc Testnet USDC escrow job.
+6. Circle Wallets submit deliverable proof onchain from the agent/seller wallet.
+7. The escrow can be released only after deliverable proof exists.
+8. The receipt page shows policy, payment, Arc escrow, deliverable tx, and release tx.
 
 ## Circle Product Feedback
 
