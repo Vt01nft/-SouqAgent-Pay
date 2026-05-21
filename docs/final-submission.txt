@@ -1,0 +1,135 @@
+# SouqAgent Pay Final Submission
+
+## Title
+
+SouqAgent Pay
+
+## Short Description
+
+SouqAgent Pay is an AI spending desk for UAE/GCC SMEs where autonomous agents discover paid services, obey owner-defined spend policy, authorize stablecoin payments, fund Arc USDC escrow, submit deliverable proof through Circle Wallets, and release settlement with a shareable receipt trail.
+
+## Track
+
+Best Agentic Economy Experience on Arc
+
+## Submitter
+
+- Team name: VT01
+- Team members: VT01, solo founder-developer
+- Circle Developer Account email: vt01nfts@gmail.com
+- GitHub repository: https://github.com/Vt01nft/-SouqAgent-Pay
+- Demo app: https://souqagent-pay.vercel.app
+- Full-flow receipt: https://souqagent-pay.vercel.app/receipt/TASK-20260520191149
+
+## Circle Products Used On Arc
+
+- USDC
+- Circle Wallets
+- Circle Gateway
+- Nanopayments / x402
+- CCTP / Bridge Kit as optional future funding route
+
+## What It Does
+
+SouqAgent Pay lets a business owner set a spend cap and ask an AI agent to verify a supplier before approving settlement. The agent discovers a paid supplier-risk API, handles the x402-style payment challenge, receives risk data, funds an Arc USDC escrow job, stores a durable task ledger in Supabase, accepts deliverable proof, submits that proof onchain through Circle Wallets, and releases the escrow once proof exists.
+
+## What Makes It Real
+
+- The deployed app runs in `testnet` mode.
+- The escrow contract is deployed on Arc Testnet.
+- Production API calls create and fund real Arc escrow jobs.
+- Circle Wallets submit deliverable proof to the Arc contract from the agent/seller wallet.
+- Supabase stores durable task, policy, deliverable, and receipt records.
+- Owner access protects spend and settlement controls.
+- The production status panel shows live deployer, escrow, owner wallet, and agent wallet balances plus the latest Arc job.
+- Receipt pages are public and shareable for audit/review.
+
+## Live Testnet Evidence
+
+- Arc Testnet USDC: `0x3600000000000000000000000000000000000000`
+- ArcJobEscrow contract: `0x421707d931D0EF3b0fd4419085b91b713C622256`
+- Contract deployment tx: `0xcc35de9fde88a79fb7dce33051cf233a830fe007a6e4338db8a7d6e4b350fe24`
+- Full-flow task: `TASK-20260520191149`
+- Arc escrow job: `6`
+- Fund tx: `0x8749ad16ce6ff2bb6f7e5db5fb41540451bd125fb6e9185540280ffe1f41897b`
+- Circle Wallet deliverable transaction id: `8c9242b3-7481-59fa-ac76-1d45ef783aa3`
+- Circle Wallet deliverable tx: `0xe0d214c51edadc4f9bec75b695e08a8d3450eb2d55a1f087b2ccbc84e5e4086b`
+- Release tx: `0xd9ebed3aae17514b3957d51c3094fdf83f0136eb19ac3627f8b4f95f28ada4fd`
+
+## Functional MVP Checklist
+
+- Working frontend dashboard
+- Working backend orchestrator
+- Owner access control
+- x402-style seller API and payment challenge
+- Budget policy engine
+- Arc Testnet escrow contract
+- Real Arc escrow funding
+- Deliverable proof before release
+- Circle Wallet onchain deliverable submission
+- Production balance/status panel
+- Supabase task ledger
+- Shareable receipt pages
+- Circle Product Feedback section
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+  Owner["SME Owner"] --> UI["SouqAgent Pay UI"]
+  UI --> Access["Owner Access Guard"]
+  Access --> API["Agent Orchestrator API"]
+  API --> Policy["Budget Policy Engine"]
+  API --> Seller["x402 Seller API"]
+  Seller --> PaidData["Supplier Risk Result"]
+  PaidData --> API
+  API --> Gateway["Circle Gateway / Nanopayments Model"]
+  API --> Wallets["Circle Wallets"]
+  Wallets --> Deliverable["submitDeliverable(uint256,string)"]
+  Deliverable --> Arc["Arc Testnet"]
+  API --> Arc
+  Arc --> Escrow["ArcJobEscrow.sol"]
+  API --> Ledger["Supabase Task Ledger"]
+  Ledger --> Receipt["Shareable Receipt Page"]
+  Receipt --> Owner
+```
+
+## Circle Product Feedback
+
+### Why These Products
+
+SouqAgent Pay needs programmable stablecoin money that agents can use without exposing unlimited funds or private keys. USDC provides the settlement asset, Arc provides deterministic USDC escrow, Circle Wallets let the agent/seller submit contract actions safely, and Gateway/Nanopayments/x402 fit the paid API model.
+
+### What Worked Well
+
+- The x402 flow is easy to explain and demo.
+- Arc's EVM compatibility made the escrow workflow straightforward.
+- Circle Wallet contract execution allowed deliverable proof submission without exposing the seller/agent private key.
+- USDC-denominated settlement is understandable for business owners.
+
+### What Could Improve
+
+- A single Arc + Wallets + Gateway + Nanopayments starter would help hackathon teams move faster.
+- More complete buyer/seller x402 sample apps would reduce integration guesswork.
+- Circle Wallet contract execution can return a Circle transaction id before a chain tx hash; a documented polling recipe would improve receipt UX.
+
+### Recommendations
+
+- Publish a "paid API in 15 minutes" starter.
+- Provide a canonical milestone escrow example on Arc.
+- Provide sample receipt components for Gateway/Nanopayments and Circle Wallet contract execution.
+
+## Demo Video Flow
+
+1. Open https://souqagent-pay.vercel.app.
+2. Show owner access, readiness, Arc contract, Circle wallet configuration, and production balance/status panel.
+3. Explain the owner instruction and spend cap.
+4. Show the agent flow: x402 payment challenge, policy check, payment authorization, supplier risk result.
+5. Show the task ledger and full-flow receipt.
+6. Open the receipt for `TASK-20260520191149`.
+7. Highlight fund tx, Circle Wallet deliverable tx, and release tx.
+8. End with the architecture diagram and Circle Product Feedback.
+
+## Pitch Summary
+
+Most agent payment demos stop at "the agent paid an API." SouqAgent Pay turns that moment into a business workflow: controlled spending, paid data, escrowed settlement, deliverable proof, release/refund controls, and receipts a business owner can actually audit.
